@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agenda Médica</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f3f6f5;
+  --surface:#ffffff;
+  --ink:#13262b;
+  --muted:#586a6f;
+  --line:#d9e3e1;
+  --primary:#0b6e6e;
+  --primary-ink:#ffffff;
+  --primary-soft:#e2f0ee;
+  --ok:#1d7440;--ok-bg:#e3f3e8;
+  --warn:#835400;--warn-bg:#fcefd4;
+  --bad:#a12a22;--bad-bg:#fbe3e0;
+  --display:'Newsreader',Georgia,serif;
+  --body:'Public Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  color-scheme:light;
+}
+/* Layout: mobile-first single column for the patient (one decision per screen); wider column for the admin desk */
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);line-height:1.5;font-size:16px}
+a{color:var(--primary)}
+.demo{background:#13262b;color:#e8f0ef;font-size:.9rem}
+.demo-in{max-width:1080px;margin:0 auto;padding:8px 18px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.demo strong{color:#fff}
+.seg{display:inline-flex;border:1px solid rgba(255,255,255,.35);border-radius:999px;overflow:hidden}
+.seg button{background:transparent;color:#e8f0ef;border:0;border-radius:0;padding:4px 12px;font-size:.85rem;font-weight:600}
+.seg button[aria-pressed="true"]{background:#fff;color:#13262b}
+.top{background:var(--surface);border-bottom:1px solid var(--line)}
+.top-in{max-width:1080px;margin:0 auto;padding:12px 18px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.brand{font-family:var(--display);font-weight:600;font-size:1.45rem;margin:0;flex:1;white-space:nowrap;letter-spacing:-.01em}
+.brand span{color:var(--primary)}
+.auth{display:flex;gap:8px;align-items:center;font-size:.9rem;color:var(--muted);flex-wrap:wrap}
+.nav{max-width:1080px;margin:0 auto;padding:0 18px;display:flex;gap:2px;overflow-x:auto}
+.nav a{padding:10px 14px;text-decoration:none;color:var(--muted);font-weight:600;border-bottom:3px solid transparent;white-space:nowrap}
+.nav a[aria-current="page"]{color:var(--ink);border-color:var(--primary)}
+.badge{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:var(--warn-bg);color:var(--warn);font-size:.75rem;margin-left:4px;font-variant-numeric:tabular-nums}
+main{padding:22px 18px 72px}
+.col{max-width:680px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+.col-wide{max-width:1080px}
+h2{font-family:var(--display);font-weight:600;font-size:1.75rem;line-height:1.2;margin:0;text-wrap:balance}
+h3{margin:0;font-size:1.05rem}
+.sub{margin:0;color:var(--muted)}
+button,.btn{font:inherit;cursor:pointer;border-radius:10px;padding:11px 16px;font-weight:600;border:1.5px solid var(--primary);background:var(--primary);color:var(--primary-ink);text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+button:hover,.btn:hover{filter:brightness(.94)}
+button:disabled{opacity:.5;cursor:not-allowed;filter:none}
+.ghost{background:transparent;color:var(--primary)}
+.ghost:hover{background:var(--primary-soft);filter:none}
+.danger{background:transparent;color:var(--bad);border-color:var(--bad)}
+.small{padding:6px 11px;font-size:.88rem;border-radius:8px}
+.block{width:100%}
+.back{background:none;border:0;color:var(--primary);padding:0;font-weight:600;align-self:flex-start}
+.back:hover{text-decoration:underline;filter:none}
+:focus-visible{outline:3px solid #f2b705;outline-offset:2px}
+.steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.steps li{font-size:.78rem;color:var(--muted);display:flex;flex-direction:column;gap:5px}
+.steps li::before{content:"";height:4px;border-radius:2px;background:var(--line)}
+.steps li.done::before,.steps li.now::before{background:var(--primary)}
+.steps li.now{color:var(--ink);font-weight:700}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.esp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.esp{flex-direction:column;align-items:flex-start;gap:2px;background:var(--surface);color:var(--ink);border:1.5px solid var(--line);padding:16px;text-align:left;min-height:84px;justify-content:center}
+.esp:hover{border-color:var(--primary);background:var(--primary-soft);filter:none}
+.esp b{font-size:1.02rem}
+.esp small{color:var(--muted);font-weight:500}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.doc-top{display:flex;gap:12px;align-items:flex-start}
+.avatar{flex:none;width:48px;height:48px;border-radius:50%;background:var(--primary-soft);color:var(--primary);display:grid;place-items:center;font-weight:700;font-family:var(--display);font-size:1.15rem}
+.doc-top .grow{flex:1;min-width:0}
+.price{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.price small{display:block;font-weight:500;color:var(--muted);font-size:.75rem;text-align:right}
+.tags{display:flex;gap:6px;flex-wrap:wrap}
+.tag{background:var(--primary-soft);color:var(--primary);border-radius:999px;padding:2px 10px;font-size:.8rem;font-weight:600}
+details summary{cursor:pointer;color:var(--primary);font-weight:600;font-size:.92rem}
+.meta{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:10px 0 0;font-size:.93rem}
+.meta dt{color:var(--muted)}
+.meta dd{margin:0}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{background:var(--surface);color:var(--ink);border:1.5px solid var(--line);padding:10px 14px;min-width:84px;flex-direction:column;gap:0;line-height:1.25}
+.chip small{font-weight:500;color:var(--muted);font-size:.78rem}
+.chip[aria-pressed="true"]{background:var(--primary);border-color:var(--primary);color:#fff}
+.chip[aria-pressed="true"] small{color:#d7ecea}
+.chip:hover{filter:none;border-color:var(--primary)}
+.summary{background:var(--primary-soft);border-radius:12px;padding:14px 16px}
+.summary .meta{margin:0}
+label{font-weight:600;font-size:.92rem;display:flex;flex-direction:column;gap:5px}
+input,select,textarea{font:inherit;width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:10px;background:#fff;color:var(--ink)}
+input:focus,select:focus,textarea:focus{border-color:var(--primary);outline:none}
+.check{flex-direction:row;align-items:flex-start;gap:10px;font-weight:400}
+.check input{width:20px;height:20px;margin-top:2px;flex:none}
+.hint{font-size:.88rem;color:var(--muted);margin:0}
+.notice{background:var(--warn-bg);color:#5c3b00;border-radius:10px;padding:10px 12px;font-size:.9rem;margin:0}
+.err{color:var(--bad);font-size:.9rem;margin:0;min-height:1.2em}
+.done-box{text-align:center;align-items:center;padding:28px 18px}
+.done-icon{width:64px;height:64px;border-radius:50%;background:var(--ok-bg);color:var(--ok);display:grid;place-items:center;font-size:2rem;font-weight:700}
+.pill{display:inline-block;border-radius:999px;padding:2px 10px;font-size:.78rem;font-weight:700;white-space:nowrap}
+.st-pendiente{background:var(--warn-bg);color:var(--warn)}
+.st-confirmada{background:var(--ok-bg);color:var(--ok)}
+.st-rechazada,.st-cancelada{background:var(--bad-bg);color:var(--bad)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.between{justify-content:space-between}
+.when{font-weight:700;font-size:1.02rem}
+.empty{background:var(--surface);border:1.5px dashed var(--line);border-radius:14px;padding:26px;text-align:center;color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;align-items:start}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+.form-grid .wide{grid-column:1/-1}
+.tabs2{display:flex;gap:8px;flex-wrap:wrap}
+.tabs2 button{background:var(--surface);color:var(--ink);border:1.5px solid var(--line)}
+.tabs2 button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+.off{opacity:.6}
+dialog{border:0;border-radius:16px;padding:0;width:calc(100% - 32px);max-width:420px;color:var(--ink)}
+dialog::backdrop{background:rgba(19,38,43,.5)}
+.dlg{padding:22px;display:flex;flex-direction:column;gap:14px}
+.dlg h2{font-size:1.45rem}
+.gbtn{background:#fff;color:var(--ink);border:1.5px solid var(--line)}
+.gbtn:hover{border-color:var(--primary);filter:none}
+.gmark{font-weight:800;color:#1a73e8}
+.or{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:.85rem}
+.or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
+.linkbtn{background:none;border:0;padding:0;color:var(--primary);font-weight:600;font-size:.9rem;align-self:flex-start}
+.linkbtn:hover{text-decoration:underline;filter:none}
+.ok{color:var(--ok);font-size:.9rem;margin:0}
+.paybox{border:1.5px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:12px;background:#fbfdfc}
+.yape{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.qr{width:128px;height:128px;object-fit:contain;border-radius:10px;border:1px solid var(--line);background:#fff;flex:none}
+.qr-empty{display:grid;place-items:center;color:var(--muted);font-size:.85rem}
+.yape-num{font-size:1.45rem;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.late{color:var(--bad);font-weight:600}
+.pg-porpagar{background:var(--warn-bg);color:var(--warn)}
+.pg-verificando{background:#e2eafa;color:#1f4a91}
+.pg-pagada{background:var(--ok-bg);color:var(--ok)}
+.okbox{background:var(--ok-bg);color:var(--ok);border-radius:10px;padding:10px 12px;margin:0;font-weight:600}
+.callout{background:#e2eafa;color:#1f4a91;border-radius:10px;padding:10px 12px;margin:0;font-size:.93rem}
+details.paid summary{list-style:none}
+details.paid summary::-webkit-details-marker{display:none}
+details.paid[open] summary{display:none}
+.receipt{max-width:100%;max-height:520px;object-fit:contain;border:1px solid var(--line);border-radius:10px;background:#fff;align-self:flex-start}
+.thumb{max-width:140px;max-height:180px;border:1px solid var(--line);border-radius:8px}
+.sendrow{display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--line);padding-top:10px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:2px}
+.stat b{font-size:1.6rem;font-variant-numeric:tabular-nums}
+.lbl{font-weight:600;font-size:.92rem}
+.tbl{width:100%;border-collapse:collapse;font-size:.93rem}
+.tbl th,.tbl td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line)}
+.tbl th{color:var(--muted);font-weight:600}
+.tbl .num{text-align:right;font-variant-numeric:tabular-nums}
+[hidden]{display:none!important}
+@media (max-width:420px){main,.top-in,.nav,.demo-in{padding-left:16px;padding-right:16px}h2{font-size:1.5rem}.brand{font-size:1.25rem}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<div class="demo" id="demoBar" hidden>
+  <div class="demo-in">
+    <span><strong>Demostración:</strong> datos de ejemplo, nada se guarda.</span>
+    <span>Ver como</span>
+    <div class="seg" role="group" aria-label="Ver como">
+      <button data-role="none">Visitante</button><button data-role="paciente">Paciente</button><button data-role="admin">Administrador</button>
+    </div>
+  </div>
+</div>
+<header class="top">
+  <div class="top-in">
+    <h1 class="brand">Agenda <span>Médica</span></h1>
+    <div class="auth"><span id="who"></span><button id="loginBtn" class="ghost small" hidden>Iniciar sesión</button><button id="logoutBtn" class="ghost small" hidden>Salir</button></div>
+  </div>
+  <nav class="nav" aria-label="Secciones">
+    <a href="#inicio" data-tab="inicio">Pedir cita</a>
+    <a href="#mis-citas" data-tab="mis-citas">Mis citas</a>
+    <a href="#admin" data-tab="admin" id="adminTab" hidden>Administrar<span class="badge" id="pendBadge" hidden></span></a>
+  </nav>
+</header>
+<dialog id="authDlg" aria-labelledby="authTitle">
+  <div class="dlg">
+    <div class="row between"><h2 id="authTitle">Entra para continuar</h2><button class="linkbtn" id="authClose" aria-label="Cerrar">Cerrar</button></div>
+    <p class="sub" id="authLead">Así podrás ver el estado de tu cita en cualquier momento.</p>
+    <button class="gbtn block" id="authGoogle"><span class="gmark" aria-hidden="true">G</span> Continuar con Google</button>
+    <div class="or">o con tu correo</div>
+    <div class="tabs2" role="group" aria-label="Tipo de acceso">
+      <button data-mode="login" aria-pressed="true">Ya tengo cuenta</button><button data-mode="signup" aria-pressed="false">Crear cuenta</button>
+    </div>
+    <form id="authForm" novalidate style="display:flex;flex-direction:column;gap:12px">
+      <label id="aNameWrap" hidden>Tu nombre<input id="aName" maxlength="80" autocomplete="name"></label>
+      <label>Correo<input id="aEmail" type="email" autocomplete="email" placeholder="tu@correo.com"></label>
+      <label>Contraseña<input id="aPass" type="password" autocomplete="current-password" minlength="6"></label>
+      <p class="hint" id="aPassHint" hidden>Mínimo 6 caracteres.</p>
+      <p class="err" id="aErr" role="alert"></p>
+      <p class="ok" id="aOk" role="status"></p>
+      <button class="block" id="aSubmit" type="submit">Entrar</button>
+      <button class="linkbtn" type="button" id="aReset">¿Olvidaste tu contraseña?</button>
+    </form>
+  </div>
+</dialog>
+<main>
+  <section id="view-inicio" class="col"></section>
+  <section id="view-mis-citas" class="col" hidden></section>
+  <section id="view-admin" class="col col-wide" hidden></section>
+</main>
+
+<script type="module">
+/* ===== Configuración de Firebase (proyecto cajonera-7db72) ===== */
+const firebaseConfig = {
+  apiKey: "AIzaSyANigwAE5FCb5ORD6q9s9rmqSLcZehqg4o",
+  authDomain: "cajonera-7db72.firebaseapp.com",
+  projectId: "cajonera-7db72",
+  storageBucket: "cajonera-7db72.firebasestorage.app",
+  messagingSenderId: "150573159947",
+  appId: "1:150573159947:web:fa6f54ad029a0922aed90e"
+};
+/* Correos de administradores (muestran el panel; la seguridad real está en las reglas de Firestore) */
+const ADMINS = ["mauriciovelardez2017@gmail.com", "mauricio.velarde@pucp.edu.pe"];
+const FB = "https://www.gstatic.com/firebasejs/10.14.1/";
+/* ============================================================== */
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const initials = n => String(n||"?").replace(/^(dr|dra)\.?\s+/i,"").split(/\s+/).slice(0,2).map(w=>w[0]||"").join("").toUpperCase();
+const pad = n => String(n).padStart(2,"0");
+const isoOf = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const dateOf = iso => { const [y,m,d]=String(iso).split("-").map(Number); return new Date(y,m-1,d); };
+const cap = s => s.charAt(0).toUpperCase()+s.slice(1);
+const longDate = iso => cap(dateOf(iso).toLocaleDateString("es-PE",{weekday:"long",day:"numeric",month:"long"}));
+const shortDate = iso => cap(dateOf(iso).toLocaleDateString("es-PE",{weekday:"short",day:"numeric",month:"short"}).replace(/\./g,""));
+const addDays = (n) => { const t=new Date(); return new Date(t.getFullYear(),t.getMonth(),t.getDate()+n); };
+const tsMs = t => typeof t==="number" ? t : (t && t.toMillis) ? t.toMillis() : Date.now();
+const digits = s => String(s).replace(/\D/g,"");
+const waNumber = tel => { let d=digits(tel); if(d.length===9 && d[0]==="9") d="51"+d; return d.length>=9 ? d : ""; };
+const plural = (n,s,p) => `${n} ${n===1?s:p}`;
+const pill = s => `<span class="pill st-${esc(s)}">${esc(cap(s))}</span>`;
+
+/* ---------- Capa de datos: Firebase real o demostración ---------- */
+function firebaseApi(appMod, F, A){
+  const app=appMod.initializeApp(firebaseConfig);
+  const db=F.getFirestore(app), auth=A.getAuth(app);
+  auth.languageCode="es";
+  const map = s => s.docs.map(d=>({id:d.id,...d.data()}));
+  const toUser = u => u ? {uid:u.uid,email:(u.email||"").toLowerCase(),name:u.displayName||"",verified:!!u.emailVerified} : null;
+  return {
+    demo:false,
+    onAuth: cb => A.onAuthStateChanged(auth, u=>cb(toUser(u))),
+    loginGoogle: async () => toUser((await A.signInWithPopup(auth,new A.GoogleAuthProvider())).user),
+    loginEmail: async (e,p) => toUser((await A.signInWithEmailAndPassword(auth,e,p)).user),
+    signupEmail: async (name,e,p) => {
+      const c=await A.createUserWithEmailAndPassword(auth,e,p);
+      try{ await A.updateProfile(c.user,{displayName:name}); }catch(_){}
+      try{ await A.sendEmailVerification(c.user); }catch(_){}
+      return {...toUser(c.user),name};
+    },
+    resetPassword: e => A.sendPasswordResetEmail(auth,e),
+    saveReceipt: (id,img,uid) => F.setDoc(F.doc(db,"comprobantes",id),{imagen:img,pacienteUid:uid,subido:F.serverTimestamp()}),
+    getReceipt: async id => { const s=await F.getDoc(F.doc(db,"comprobantes",id)); return s.exists()?s.data().imagen:null; },
+    deleteReceipt: id => F.deleteDoc(F.doc(db,"comprobantes",id)),
+    watchConfig: cb => F.onSnapshot(F.doc(db,"config","pagos"), s=>cb(s.exists()?s.data():{}), ()=>cb({})),
+    saveConfig: data => F.setDoc(F.doc(db,"config","pagos"),data),
+    logout: () => A.signOut(auth),
+    watchDoctors: (cb,err) => F.onSnapshot(F.collection(db,"doctores"), s=>cb(map(s)), err),
+    watchMine: (uid,cb,err) => F.onSnapshot(F.query(F.collection(db,"solicitudes"),F.where("pacienteUid","==",uid)), s=>cb(map(s)), err),
+    watchAll: (cb,err) => F.onSnapshot(F.collection(db,"solicitudes"), s=>cb(map(s)), err),
+    addRequest: data => F.addDoc(F.collection(db,"solicitudes"),{...data,creada:F.serverTimestamp()}),
+    updateRequest: (id,data) => F.updateDoc(F.doc(db,"solicitudes",id),data),
+    saveDoctor: (id,data) => id ? F.setDoc(F.doc(db,"doctores",id),data) : F.addDoc(F.collection(db,"doctores"),data),
+    updateDoctor: (id,data) => F.updateDoc(F.doc(db,"doctores",id),data),
+    deleteDoctor: id => F.deleteDoc(F.doc(db,"doctores",id))
+  };
+}
+function demoReceipt(){
+  const cv=document.createElement("canvas"); cv.width=360; cv.height=520; const c=cv.getContext("2d");
+  c.fillStyle="#f4f4f6"; c.fillRect(0,0,360,520); c.fillStyle="#fff"; c.fillRect(24,40,312,440);
+  c.fillStyle="#13262b"; c.textAlign="center"; c.font="600 18px system-ui,sans-serif"; c.fillText("Captura de ejemplo",180,90);
+  c.font="700 40px system-ui,sans-serif"; c.fillText("S/ 70",180,170);
+  c.font="15px system-ui,sans-serif"; c.fillStyle="#586a6f";
+  ["Pago enviado","Para: Mauricio V.","Operación: 04512378","Hoy, 14:32"].forEach((t,i)=>c.fillText(t,180,230+i*34));
+  c.font="italic 13px system-ui,sans-serif"; c.fillText("(Imagen de demostración)",180,440);
+  return cv.toDataURL("image/jpeg",0.8);
+}
+function demoApi(){
+  const USERS={
+    paciente:{uid:"demo-paciente",email:"lucia.demo@gmail.com",name:"Lucía Mendoza",verified:true},
+    admin:{uid:"demo-admin",email:ADMINS[0],name:"Mauricio",verified:true}
+  };
+  const st={
+    doctores:[
+      {id:"d1",nombre:"Dra. Ana Torres",especialidad:"Pediatría",cmp:"045123",distrito:"Miraflores",modalidad:"Presencial y virtual",precio:120,horario:"Lun a vie, 9:00–13:00",seguros:"Pacífico, Rímac, particular",descripcion:"Atención a niños y adolescentes. 10 años de experiencia.",activo:true},
+      {id:"d2",nombre:"Dr. Luis Ramírez",especialidad:"Cardiología",cmp:"031876",distrito:"San Isidro",modalidad:"Presencial",precio:180,horario:"Mar y jue, 15:00–19:00",seguros:"Particular",descripcion:"Chequeos preventivos y control de presión arterial.",activo:true},
+      {id:"d3",nombre:"Dra. Carla Quispe",especialidad:"Dermatología",cmp:"052310",distrito:"Surco",modalidad:"Virtual",precio:90,horario:"Sáb, 9:00–12:00",seguros:"Particular",descripcion:"",activo:true},
+      {id:"d4",nombre:"Dr. Jorge Paredes",especialidad:"Medicina general",cmp:"040987",distrito:"Jesús María",modalidad:"Presencial y virtual",precio:70,horario:"Lun a sáb, 8:00–14:00",seguros:"Rímac, Mapfre, particular",descripcion:"Consulta general y derivación a especialistas.",activo:true},
+      {id:"d5",nombre:"Dra. Rosa Huamán",especialidad:"Pediatría",cmp:"047654",distrito:"San Borja",modalidad:"Presencial",precio:110,horario:"Lun, mié y vie, 15:00–19:00",seguros:"Pacífico, particular",descripcion:"",activo:true}
+    ],
+    comprobantes:{},
+    config:{yapeNumero:"999 111 222",yapeTitular:"Mauricio V.",plazoHoras:3,politica:"Puedes cancelar sin costo hasta 24 horas antes de tu cita y te devolvemos el pago completo.",qr:""},
+    solicitudes:[
+      {id:"r1",doctorId:"d2",doctorNombre:"Dr. Luis Ramírez",especialidad:"Cardiología",pacienteUid:"demo-paciente",pacienteNombre:"Lucía Mendoza",pacienteEmail:"lucia.demo@gmail.com",telefono:"987654321",fecha:isoOf(addDays(2)),turno:"Tarde",modalidad:"Presencial",estado:"confirmada",hora:"16:30",nota:"Consultorio 204, segundo piso.",monto:180,pago:"por_pagar",pagoReportado:false,pagarAntes:Date.now()+3*3600000,creada:Date.now()-86400000},
+      {id:"r4",doctorId:"d4",doctorNombre:"Dr. Jorge Paredes",especialidad:"Medicina general",pacienteUid:"otro3",pacienteNombre:"Rosa Díaz",pacienteEmail:"rosa.demo@hotmail.com",telefono:"945678123",fecha:isoOf(addDays(1)),turno:"Tarde",modalidad:"Presencial",estado:"confirmada",hora:"15:00",nota:"",monto:70,pago:"por_pagar",pagoReportado:true,operacion:"04512378",comprobante:true,pagarAntes:Date.now()+3600000,creada:Date.now()-5400000},
+      {id:"r5",doctorId:"d5",doctorNombre:"Dra. Rosa Huamán",especialidad:"Pediatría",pacienteUid:"otro4",pacienteNombre:"Jorge Lima",pacienteEmail:"jorge.demo@gmail.com",telefono:"923456789",fecha:isoOf(addDays(4)),turno:"Tarde",modalidad:"Presencial",estado:"confirmada",hora:"17:00",nota:"",monto:110,pago:"pagado",creada:Date.now()-172800000},
+      {id:"r6",doctorId:"d2",doctorNombre:"Dr. Luis Ramírez",especialidad:"Cardiología",pacienteUid:"otro5",pacienteNombre:"Ana Flores",pacienteEmail:"ana.demo@gmail.com",telefono:"934567812",fecha:isoOf(addDays(5)),turno:"Tarde",modalidad:"Presencial",estado:"confirmada",hora:"18:00",nota:"",monto:180,pago:"pagado",creada:Date.now()-200000000},
+      {id:"r2",doctorId:"d1",doctorNombre:"Dra. Ana Torres",especialidad:"Pediatría",pacienteUid:"otro",pacienteNombre:"Carlos Vega",pacienteEmail:"carlos.demo@gmail.com",telefono:"912345678",fecha:isoOf(addDays(1)),turno:"Mañana",modalidad:"Virtual",estado:"pendiente",nota:"",creada:Date.now()-3600000},
+      {id:"r3",doctorId:"d4",doctorNombre:"Dr. Jorge Paredes",especialidad:"Medicina general",pacienteUid:"otro2",pacienteNombre:"María Salas",pacienteEmail:"maria.demo@gmail.com",telefono:"956781234",fecha:isoOf(addDays(3)),turno:"Mañana",modalidad:"Presencial",estado:"pendiente",nota:"",creada:Date.now()-7200000}
+    ]
+  };
+  let cur=null, authCb=null, LD=[], LS=[], LC=[];
+  const clone=x=>JSON.parse(JSON.stringify(x));
+  const emit=()=>{ LD.forEach(f=>f(clone(st.doctores))); LS.forEach(o=>o.f(clone(o.uid?st.solicitudes.filter(r=>r.pacienteUid===o.uid):st.solicitudes))); };
+  const later=f=>setTimeout(f,0);
+  const api={
+    demo:true,
+    setRole:r=>{ cur=r==="none"?null:clone(USERS[r]); authCb&&authCb(cur); },
+    onAuth:cb=>{ authCb=cb; later(()=>cb(cur)); },
+    loginGoogle:async()=>{ cur=clone(USERS.paciente); authCb&&authCb(cur); return cur; },
+    loginEmail:async(e)=>{ cur={...clone(USERS.paciente),email:e.toLowerCase(),name:""}; authCb&&authCb(cur); return cur; },
+    signupEmail:async(n,e)=>{ cur={...clone(USERS.paciente),email:e.toLowerCase(),name:n,verified:false}; authCb&&authCb(cur); return cur; },
+    resetPassword:async()=>{},
+    saveReceipt:async(id,img)=>{ st.comprobantes[id]=img; },
+    getReceipt:async id=>{ if(id==="r4"&&!st.comprobantes.r4) st.comprobantes.r4=demoReceipt(); return st.comprobantes[id]||null; },
+    deleteReceipt:async id=>{ delete st.comprobantes[id]; },
+    watchConfig:cb=>{ LC.push(cb); later(()=>cb(clone(st.config))); },
+    saveConfig:async d=>{ st.config=clone(d); later(()=>LC.forEach(f=>f(clone(st.config)))); },
+    logout:async()=>{ cur=null; authCb&&authCb(null); },
+    watchDoctors:cb=>{ LD.push(cb); later(()=>cb(clone(st.doctores))); return ()=>{LD=LD.filter(x=>x!==cb);}; },
+    watchMine:(uid,cb)=>{ const o={f:cb,uid}; LS.push(o); later(()=>cb(clone(st.solicitudes.filter(r=>r.pacienteUid===uid)))); return ()=>{LS=LS.filter(x=>x!==o);}; },
+    watchAll:cb=>{ const o={f:cb,uid:null}; LS.push(o); later(()=>cb(clone(st.solicitudes))); return ()=>{LS=LS.filter(x=>x!==o);}; },
+    addRequest:async d=>{ st.solicitudes.push({...clone(d),id:"r"+Date.now(),creada:Date.now()}); later(emit); },
+    updateRequest:async(id,d)=>{ Object.assign(st.solicitudes.find(r=>r.id===id),clone(d)); later(emit); },
+    saveDoctor:async(id,d)=>{ if(id){ const i=st.doctores.findIndex(x=>x.id===id); st.doctores[i]={...clone(d),id}; } else st.doctores.push({...clone(d),id:"d"+Date.now()}); later(emit); },
+    updateDoctor:async(id,d)=>{ Object.assign(st.doctores.find(x=>x.id===id),clone(d)); later(emit); },
+    deleteDoctor:async id=>{ st.doctores=st.doctores.filter(x=>x.id!==id); later(emit); }
+  };
+  return api;
+}
+async function loadApi(){
+  if(new URLSearchParams(location.search).has("demo")) return demoApi();
+  try{
+    const mods=await Promise.race([
+      Promise.all([import(FB+"firebase-app.js"),import(FB+"firebase-firestore.js"),import(FB+"firebase-auth.js")]),
+      new Promise((_,rej)=>setTimeout(()=>rej(new Error("timeout")),20000))
+    ]);
+    return firebaseApi(...mods);
+  }catch(e){
+    /* En tu sitio real nunca se muestra la demo: si Firebase no carga, se avisa del error */
+    if(/github\.io$/.test(location.hostname)) return null;
+    return demoApi();
+  }
+}
+
+/* ---------- Estado ---------- */
+let config={};
+let api, doctors=[], mine=[], all=[], user=null, isAdmin=false, unMine=null, unAll=null;
+const flow={step:1, esp:null, docId:null, fecha:null, turno:null, modalidad:null, lastTel:""};
+const adm={tab:"solicitudes", filtro:"pendiente"};
+const activeDoctors = () => doctors.filter(d=>d.activo!==false);
+const docById = id => doctors.find(d=>d.id===id);
+
+/* ---------- Navegación ---------- */
+function currentTab(){ let t=(location.hash||"#inicio").slice(1); if(t==="admin"&&!isAdmin) t="inicio"; return ["inicio","mis-citas","admin"].includes(t)?t:"inicio"; }
+function route(){
+  const tab=currentTab();
+  ["inicio","mis-citas","admin"].forEach(t=>$("view-"+t).hidden = t!==tab);
+  document.querySelectorAll(".nav a").forEach(a=>{ if(a.dataset.tab===tab) a.setAttribute("aria-current","page"); else a.removeAttribute("aria-current"); });
+  if(tab==="inicio") renderFlow(); else if(tab==="mis-citas") renderMine(); else renderAdmin();
+}
+addEventListener("hashchange", ()=>{ route(); scrollTo(0,0); });
+
+/* ---------- Paciente: flujo en 4 pasos ---------- */
+const STEPS=["Especialidad","Doctor","Día","Enviar"];
+const stepper = () => `<ol class="steps" aria-label="Pasos">${STEPS.map((s,i)=>`<li class="${i+1<flow.step?"done":i+1===flow.step?"now":""}" ${i+1===flow.step?'aria-current="step"':""}><span class="sr">Paso ${i+1}: </span>${s}</li>`).join("")}</ol>`;
+function go(step){ flow.step=step; renderFlow(); scrollTo(0,0); }
+
+function renderFlow(){
+  const v=$("view-inicio");
+  if(flow.step===5) return renderDone(v);
+  const ad=activeDoctors();
+  if(flow.step===1){
+    const counts={}; ad.forEach(d=>counts[d.especialidad]=(counts[d.especialidad]||0)+1);
+    const esps=Object.keys(counts).sort((a,b)=>a.localeCompare(b));
+    v.innerHTML = stepper() + `<h2>¿Qué especialidad necesitas?</h2>
+      <p class="sub">Elige una y te mostramos a los doctores disponibles.</p>
+      ${esps.length ? `<div class="esp-grid">${esps.map(e=>`<button class="esp" data-act="esp" data-v="${esc(e)}"><b>${esc(e)}</b><small>${plural(counts[e],"doctor","doctores")}</small></button>`).join("")}</div>
+      <button class="ghost" data-act="esp" data-v="">Ver todos los doctores (${ad.length})</button>`
+      : `<div class="empty">Todavía no hay doctores registrados.</div>`}`;
+    return;
+  }
+  if(flow.step===2){
+    const list=ad.filter(d=>!flow.esp||d.especialidad===flow.esp).sort((a,b)=>(a.precio??1e9)-(b.precio??1e9));
+    v.innerHTML = stepper() + `<button class="back" data-act="go" data-v="1">← Cambiar especialidad</button>
+      <h2>${flow.esp?esc(flow.esp):"Todos los doctores"}</h2>
+      <p class="sub">${plural(list.length,"doctor disponible","doctores disponibles")}, del precio más bajo al más alto.</p>
+      ${list.length?list.map(d=>`<article class="card">
+        <div class="doc-top"><div class="avatar" aria-hidden="true">${esc(initials(d.nombre))}</div>
+          <div class="grow"><h3>${esc(d.nombre)}</h3><p class="sub">${esc(d.especialidad)}${d.distrito?" · "+esc(d.distrito):""}</p></div>
+          ${d.precio!=null&&d.precio!==""?`<div class="price">S/ ${esc(d.precio)}<small>consulta</small></div>`:""}</div>
+        <div class="tags">${(d.modalidad||"Presencial").split(" y ").map(m=>`<span class="tag">${esc(cap(m))}</span>`).join("")}</div>
+        ${(d.horario||d.seguros||d.cmp||d.descripcion)?`<details><summary>Ver más</summary><dl class="meta">
+          ${d.horario?`<dt>Horario</dt><dd>${esc(d.horario)}</dd>`:""}
+          ${d.seguros?`<dt>Seguros</dt><dd>${esc(d.seguros)}</dd>`:""}
+          ${d.cmp?`<dt>CMP</dt><dd>${esc(d.cmp)}</dd>`:""}
+          ${d.descripcion?`<dt>Sobre</dt><dd>${esc(d.descripcion)}</dd>`:""}</dl></details>`:""}
+        <button class="block" data-act="doc" data-v="${d.id}">Elegir a ${esc(d.nombre.split(" ").slice(0,2).join(" "))}</button>
+      </article>`).join(""):`<div class="empty">No hay doctores en esta especialidad.</div>`}`;
+    return;
+  }
+  const d=docById(flow.docId);
+  if(!d){ go(1); return; }
+  if(flow.step===3){
+    const both=(d.modalidad||"")==="Presencial y virtual";
+    const days=[...Array(7)].map((_,i)=>{ const dt=addDays(i); const iso=isoOf(dt);
+      const top=i===0?"Hoy":i===1?"Mañana":cap(dt.toLocaleDateString("es-PE",{weekday:"short"}).replace(".",""));
+      return `<button class="chip" data-act="dia" data-v="${iso}" aria-pressed="${flow.fecha===iso}">${top}<small>${dt.getDate()} ${dt.toLocaleDateString("es-PE",{month:"short"}).replace(".","")}</small></button>`; }).join("");
+    const turnos=[["Mañana","8:00–12:00"],["Tarde","12:00–18:00"],["Noche","18:00–21:00"]].map(([t,h])=>`<button class="chip" data-act="turno" data-v="${t}" aria-pressed="${flow.turno===t}">${t}<small>${h}</small></button>`).join("");
+    const mods=both?["Presencial","Virtual"].map(m=>`<button class="chip" data-act="mod" data-v="${m}" aria-pressed="${flow.modalidad===m}">${m}</button>`).join(""):"";
+    const ready=flow.fecha&&flow.turno&&(!both||flow.modalidad);
+    v.innerHTML = stepper() + `<button class="back" data-act="go" data-v="2">← Cambiar doctor</button>
+      <h2>¿Qué día te acomoda?</h2>
+      <p class="sub">${esc(d.nombre)}${d.horario?` atiende: ${esc(d.horario)}`:""}. Elige tu preferencia y te confirmamos la hora exacta.</p>
+      <div class="card"><h3>Día</h3><div class="chips">${days}</div>
+        <h3>Turno</h3><div class="chips">${turnos}</div>
+        ${both?`<h3>Modalidad</h3><div class="chips">${mods}</div>`:""}</div>
+      <button class="block" data-act="go" data-v="4" ${ready?"":"disabled"}>Continuar</button>
+      ${ready?"":`<p class="hint" style="text-align:center">Elige día${both?", turno y modalidad":" y turno"} para continuar.</p>`}`;
+    return;
+  }
+  if(flow.step===4){
+    const mod=flow.modalidad||((d.modalidad||"Presencial")==="Virtual"?"Virtual":"Presencial");
+    v.innerHTML = stepper() + `<button class="back" data-act="go" data-v="3">← Cambiar día</button>
+      <h2>Revisa y envía tu solicitud</h2>
+      <div class="summary"><dl class="meta">
+        <dt>Doctor</dt><dd><b>${esc(d.nombre)}</b> · ${esc(d.especialidad)}</dd>
+        <dt>Día</dt><dd>${esc(longDate(flow.fecha))}</dd>
+        <dt>Turno</dt><dd>${esc(flow.turno)}</dd>
+        <dt>Modalidad</dt><dd>${esc(mod)}${mod==="Presencial"&&d.distrito?" · "+esc(d.distrito):""}</dd>
+        ${d.precio!=null&&d.precio!==""?`<dt>Consulta</dt><dd>S/ ${esc(d.precio)}</dd>`:""}
+        ${d.precio&&config.yapeNumero?`<dt>Pago</dt><dd>Por Yape, cuando te confirmemos la hora. Tu cupo queda reservado al pagar.</dd>`:""}</dl></div>
+      <form id="sendForm" class="card" novalidate>
+        <label>Tu nombre<input id="fNombre" maxlength="80" autocomplete="name" value="${esc(user?.name||"")}" required></label>
+        <label>Celular o WhatsApp<input id="fTel" maxlength="20" inputmode="tel" autocomplete="tel" placeholder="987 654 321" value="${esc(flow.lastTel)}" required></label>
+        <p class="notice">No escribas síntomas ni datos médicos. El doctor los verá contigo en la consulta.</p>
+        <label class="check"><input type="checkbox" id="fOk"> Autorizo usar mi nombre, correo y celular solo para coordinar esta cita.</label>
+        <p class="err" id="fErr" role="alert"></p>
+        <button class="block" id="fSend" type="submit">${user?"Enviar solicitud":"Continuar y enviar"}</button>
+        ${user?`<p class="hint" style="text-align:center">Enviarás como ${esc(user.email)}</p>`:`<p class="hint" style="text-align:center">Te pediremos entrar con Google o con tu correo para que puedas ver el estado de tu cita.</p>`}
+      </form>`;
+  }
+}
+function renderDone(v){
+  v.innerHTML = `<div class="card done-box"><div class="done-icon" aria-hidden="true">✓</div>
+    <h2>¡Solicitud enviada!</h2>
+    <p class="sub">Te escribiremos por WhatsApp${flow.lastTel?` al <b>${esc(flow.lastTel)}</b>`:""} para confirmar la hora exacta. Normalmente respondemos el mismo día.</p>
+    <div class="row" style="justify-content:center"><a class="btn" href="#mis-citas">Ver mis citas</a><button class="ghost" data-act="reset">Pedir otra cita</button></div></div>`;
+}
+$("view-inicio").addEventListener("click", e=>{
+  const b=e.target.closest("[data-act]"); if(!b) return;
+  const a=b.dataset.act, val=b.dataset.v;
+  if(a==="esp"){ flow.esp=val||null; go(2); }
+  else if(a==="doc"){ if(flow.docId!==val){ flow.fecha=null; flow.turno=null; flow.modalidad=null; } flow.docId=val; go(3); }
+  else if(a==="dia"){ flow.fecha=val; renderFlow(); }
+  else if(a==="turno"){ flow.turno=val; renderFlow(); }
+  else if(a==="mod"){ flow.modalidad=val; renderFlow(); }
+  else if(a==="go"){ go(Number(val)); }
+  else if(a==="reset"){ Object.assign(flow,{step:1,esp:null,docId:null,fecha:null,turno:null,modalidad:null}); renderFlow(); }
+});
+$("view-inicio").addEventListener("submit", async e=>{
+  e.preventDefault();
+  const err=$("fErr"), btn=$("fSend"), d=docById(flow.docId);
+  const nombre=$("fNombre").value.trim(), tel=$("fTel").value.trim();
+  if(!nombre){ err.textContent="Escribe tu nombre."; $("fNombre").focus(); return; }
+  if(digits(tel).length<7){ err.textContent="Revisa tu número de celular."; $("fTel").focus(); return; }
+  if(!$("fOk").checked){ err.textContent="Necesitamos tu autorización para coordinar la cita."; return; }
+  if(!d){ err.textContent="Este doctor ya no está disponible. Elige otro."; return; }
+  err.textContent=""; btn.disabled=true; flow.lastTel=tel;
+  try{
+    let u=user;
+    if(!u){ u=await openAuth("Último paso: entra para enviar tu solicitud y ver su estado después."); if(u) user=u; }
+    if(!u){ err.textContent="Entra con Google o con tu correo para enviar la solicitud."; btn.disabled=false; return; }
+    btn.textContent="Enviando…";
+    const mod=flow.modalidad||((d.modalidad||"Presencial")==="Virtual"?"Virtual":"Presencial");
+    await api.addRequest({doctorId:d.id,doctorNombre:d.nombre,especialidad:d.especialidad,pacienteUid:u.uid,pacienteNombre:nombre.slice(0,80),pacienteEmail:u.email,telefono:tel.slice(0,20),fecha:flow.fecha,turno:flow.turno,modalidad:mod,consentimiento:true,estado:"pendiente",nota:""});
+    go(5);
+  }catch(ex){
+    const c=ex&&ex.code;
+    err.textContent = c==="auth/popup-closed-by-user"||c==="auth/cancelled-popup-request" ? "Cerraste la ventana de Google. Pulsa el botón otra vez para enviar."
+      : c==="auth/popup-blocked" ? "Tu navegador bloqueó la ventana de Google. Permite ventanas emergentes y vuelve a intentar."
+      : c==="auth/unauthorized-domain" ? "Este sitio no está autorizado en Firebase todavía."
+      : c==="permission-denied" ? "No se pudo guardar por permisos. Avísale al administrador."
+      : "No se pudo enviar. Revisa tu conexión e inténtalo otra vez.";
+    btn.disabled=false; btn.textContent=user?"Enviar solicitud":"Continuar y enviar";
+  }
+});
+
+/* ---------- Comprimir imágenes (capturas) ---------- */
+function loadImg(file){ return new Promise((res,rej)=>{ const url=URL.createObjectURL(file), img=new Image(); img.onload=()=>{ URL.revokeObjectURL(url); res(img); }; img.onerror=()=>{ URL.revokeObjectURL(url); rej(new Error("img")); }; img.src=url; }); }
+async function compressImage(file){
+  const img=await loadImg(file); let max=1000, q=0.75, out="";
+  for(let i=0;i<8;i++){
+    const s=Math.min(1,max/Math.max(img.width,img.height)), cv=document.createElement("canvas");
+    cv.width=Math.round(img.width*s); cv.height=Math.round(img.height*s);
+    const cx=cv.getContext("2d"); cx.fillStyle="#fff"; cx.fillRect(0,0,cv.width,cv.height); cx.drawImage(img,0,0,cv.width,cv.height);
+    out=cv.toDataURL("image/jpeg",q); if(out.length<700000) return out;
+    if(q>0.45) q-=0.15; else max=Math.round(max*0.75);
+  }
+  throw new Error("big");
+}
+
+/* ---------- Paciente: mis citas ---------- */
+const fmtDeadline = ms => {
+  if(!ms) return "";
+  const d=new Date(ms), t=new Date(), tm=`${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  if(d.toDateString()===t.toDateString()) return `hoy a las ${tm}`;
+  const m=new Date(t.getFullYear(),t.getMonth(),t.getDate()+1);
+  if(d.toDateString()===m.toDateString()) return `mañana a las ${tm}`;
+  return `el ${d.toLocaleDateString("es-PE",{weekday:"long",day:"numeric"})} a las ${tm}`;
+};
+const money = n => `S/ ${Number(n||0).toLocaleString("es-PE",{maximumFractionDigits:2})}`;
+function payState(r){ if(r.estado!=="confirmada"||!r.pago) return ""; if(r.pago==="pagado") return "pagada"; return r.pagoReportado?"verificando":"porpagar"; }
+const PAY_LABEL={porpagar:"Por pagar",verificando:"Verificando pago",pagada:"Pagada"};
+const payPill = s => s?`<span class="pill pg-${s}">${PAY_LABEL[s]}</span>`:"";
+function yapeBox(r){
+  const c=config||{};
+  if(!c.yapeNumero) return `<p class="notice">Te enviaremos los datos de pago por WhatsApp.</p>`;
+  const vencido = r.pagarAntes && Date.now()>r.pagarAntes;
+  return `<div class="paybox">
+    <div class="row between"><b>Paga ${money(r.monto)} por Yape para reservar</b>${r.pagarAntes?`<span class="hint ${vencido?"late":""}">${vencido?"El plazo venció: escríbenos":"Antes de "+esc(fmtDeadline(r.pagarAntes).replace(/^el /,""))}</span>`:""}</div>
+    <div class="yape">
+      ${c.qr?`<img src="${c.qr}" alt="Código QR de Yape" class="qr">`:""}
+      <div><div class="hint">Número de Yape</div><div class="yape-num">${esc(c.yapeNumero)}</div>
+        ${c.yapeTitular?`<div class="hint">A nombre de ${esc(c.yapeTitular)}</div>`:""}
+        <button class="ghost small" style="margin-top:6px" data-act="copy" data-v="${esc(digits(c.yapeNumero))}">Copiar número</button></div>
+    </div>
+    ${c.politica?`<p class="hint">${esc(c.politica)}</p>`:""}
+    <details class="paid"><summary class="btn block">Ya pagué</summary>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px">
+        <label>Captura de tu pago<input type="file" id="cf-${r.id}" accept="image/*" data-preview="cp-${r.id}"></label>
+        <img id="cp-${r.id}" class="thumb" alt="Vista previa de tu captura" hidden>
+        <label>N.º de operación de Yape (opcional)<input id="op-${r.id}" maxlength="30" inputmode="numeric" placeholder="Aparece en tu constancia de Yape"></label>
+        <button data-act="reportar" data-v="${r.id}">Avisar que ya pagué</button>
+        <p class="err" id="pe-${r.id}"></p>
+      </div></details>
+  </div>`;
+}
+function renderMine(){
+  const v=$("view-mis-citas");
+  if(!user){ v.innerHTML=`<h2>Mis citas</h2><div class="empty">Inicia sesión para ver el estado de tus citas.<br><br><button data-act="login">Iniciar sesión</button></div>`; return; }
+  const order={confirmada:0,pendiente:1,rechazada:2,cancelada:3};
+  const list=[...mine].sort((a,b)=>(order[a.estado]-order[b.estado])||String(a.fecha).localeCompare(String(b.fecha)));
+  v.innerHTML = `<h2>Mis citas</h2>` + (list.length ? list.map(r=>{
+    const d=docById(r.doctorId), ps=payState(r);
+    const when = r.estado==="confirmada" && r.hora ? `${longDate(r.fecha)} · ${r.hora}` : `${longDate(r.fecha)} · ${r.turno}`;
+    let body="";
+    if(r.estado==="pendiente") body=`<p class="hint">Te confirmaremos la hora exacta por WhatsApp${d&&d.precio!=null&&d.precio!==""&&config.yapeNumero?` y te pediremos el pago de ${money(d.precio)} por Yape para reservar tu cupo`:""}.</p>`;
+    else if(ps==="porpagar") body=yapeBox(r);
+    else if(ps==="verificando") body=`<p class="callout">Recibimos tu aviso de pago${r.comprobante?" con tu captura":""}${r.operacion?` (operación ${esc(r.operacion)})`:""}. Lo verificamos y te confirmamos por WhatsApp.</p>`;
+    else if(ps==="pagada") body=`<p class="okbox">Pago recibido: ${money(r.monto)}. Tu cupo está reservado.</p>`;
+    const canCancel = r.estado==="pendiente"||r.estado==="confirmada";
+    return `<article class="card">
+      <div class="row between"><h3>${esc(r.doctorNombre)}</h3><div class="row">${pill(r.estado)}${payPill(ps)}</div></div>
+      <div><div class="when">${esc(when)}</div><p class="sub">${esc(r.especialidad)} · ${esc(r.modalidad)}${r.modalidad==="Presencial"&&d?.distrito?" · "+esc(d.distrito):""}</p></div>
+      ${r.nota?`<p class="summary" style="margin:0">${esc(r.nota)}</p>`:""}
+      ${body}
+      ${canCancel?`<div><button class="danger small" data-act="cancel" data-v="${r.id}">Cancelar cita</button></div>${ps==="pagada"||ps==="verificando"?`<p class="hint" style="margin-top:-6px">Si cancelas, te escribiremos para la devolución según la política de cancelación.</p>`:""}`:""}
+    </article>`; }).join("") : `<div class="empty">Aún no has pedido citas.<br><br><a class="btn" href="#inicio">Pedir una cita</a></div>`);
+}
+$("view-mis-citas").addEventListener("change", e=>{
+  const inp=e.target; if(!inp.dataset.preview||!inp.files[0]) return;
+  const p=$(inp.dataset.preview), url=URL.createObjectURL(inp.files[0]); p.onload=()=>URL.revokeObjectURL(url); p.src=url; p.hidden=false;
+});
+$("view-mis-citas").addEventListener("click", async e=>{
+  const b=e.target.closest("[data-act]"); if(!b) return;
+  const a=b.dataset.act, id=b.dataset.v;
+  if(a==="login"){ openAuth(); return; }
+  if(a==="copy"){
+    try{ await navigator.clipboard.writeText(id); b.textContent="Número copiado"; }
+    catch(_){ b.textContent="Cópialo: "+id; }
+    return;
+  }
+  if(a==="reportar"){
+    const op=($("op-"+id).value||"").trim().slice(0,30), file=$("cf-"+id).files[0], pe=$("pe-"+id);
+    if(!file && !op){ pe.textContent="Sube la captura de tu pago o escribe el número de operación."; return; }
+    b.disabled=true; pe.textContent="";
+    try{
+      if(file){
+        b.textContent="Preparando captura…";
+        let img; try{ img=await compressImage(file); }catch(_){ throw {msg:"No pude leer esa imagen. Prueba con otra captura."}; }
+        b.textContent="Subiendo…";
+        await api.saveReceipt(id,img,user.uid);
+      }
+      b.textContent="Enviando…";
+      await api.updateRequest(id,{pagoReportado:true,operacion:op,comprobante:!!file});
+    }catch(ex){ b.disabled=false; b.textContent="Avisar que ya pagué"; pe.textContent=ex.msg||"No se pudo enviar. Inténtalo otra vez."; }
+    return;
+  }
+  if(a==="cancel"){
+    if(b.dataset.sure!=="1"){ b.dataset.sure="1"; b.textContent="¿Seguro? Pulsa otra vez"; return; }
+    b.disabled=true;
+    try{ await api.updateRequest(id,{estado:"cancelada"}); }catch(_){ b.disabled=false; b.textContent="No se pudo cancelar"; }
+  }
+});
+
+/* ---------- Administrador ---------- */
+function msgFor(r, kind){
+  const d=docById(r.doctorId), c=config||{}, primer=String(r.pacienteNombre||"").split(" ")[0];
+  const fecha=longDate(r.fecha).toLowerCase().replace(",","");
+  const lugar = r.modalidad==="Virtual" ? " por videollamada" : d?.distrito ? ` en ${d.distrito}` : "";
+  const link=`${location.origin}${location.pathname}#mis-citas`, pedir=`${location.origin}${location.pathname}`;
+  const yape=`${money(r.monto)} por Yape al ${c.yapeNumero||""}${c.yapeTitular?` (${c.yapeTitular})`:""}`;
+  const plazo=r.pagarAntes?` antes de ${fmtDeadline(r.pagarAntes).replace(/^el /,"")}`:"";
+  const firma="\n\nAgenda Médica";
+  switch(kind){
+    case "confirmada": {
+      const pagar = r.pago==="por_pagar" && c.yapeNumero ? ` Para reservar tu cupo, paga ${yape}${plazo}. Luego entra a ${link} y pulsa «Ya pagué».` : "";
+      return {subject:`Tu cita con ${r.doctorNombre} está confirmada`,
+        text:`Hola ${primer}, tu cita con ${r.doctorNombre} (${r.especialidad}) quedó confirmada para el ${fecha} a las ${r.hora}${lugar}.${r.nota?" "+r.nota:""}${pagar} Si no puedes asistir, avísanos respondiendo este mensaje.${firma}`};
+    }
+    case "recordatorio":
+      return {subject:`Recordatorio de pago: tu cita con ${r.doctorNombre}`,
+        text:`Hola ${primer}, te recordamos que tu cita del ${fecha} a las ${r.hora} se reserva con el pago de ${yape}${plazo}. Si ya pagaste, entra a ${link} y pulsa «Ya pagué».${firma}`};
+    case "pagado":
+      return {subject:`Pago recibido: tu cita con ${r.doctorNombre}`,
+        text:`Hola ${primer}, recibimos tu pago de ${money(r.monto)}. Tu cita con ${r.doctorNombre} el ${fecha} a las ${r.hora}${lugar} está reservada. ¡Te esperamos!${firma}`};
+    case "liberada":
+      return {subject:`Tu cita con ${r.doctorNombre} fue liberada`,
+        text:`Hola ${primer}, como no recibimos el pago a tiempo, liberamos tu cita del ${fecha}. Si aún la necesitas, puedes pedir otra fecha aquí: ${pedir}${firma}`};
+    default:
+      return {subject:`Sobre tu solicitud de cita con ${r.doctorNombre}`,
+        text:`Hola ${primer}, lamentablemente no hay disponibilidad con ${r.doctorNombre} para el ${fecha}.${r.nota?" "+r.nota:""} Puedes pedir otra fecha aquí: ${pedir}${firma}`};
+  }
+}
+function waLink(r,kind){ const n=waNumber(r.telefono); return n ? `https://wa.me/${n}?text=${encodeURIComponent(msgFor(r,kind).text)}` : ""; }
+function gmailLink(r,kind){ const m=msgFor(r,kind); return `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(r.pacienteEmail)}&su=${encodeURIComponent(m.subject)}&body=${encodeURIComponent(m.text)}`; }
+function mailtoLink(r,kind){ const m=msgFor(r,kind); return `mailto:${encodeURIComponent(r.pacienteEmail)}?subject=${encodeURIComponent(m.subject)}&body=${encodeURIComponent(m.text)}`; }
+function sendLinks(r,kind,label,primary=true){
+  const wa=waLink(r,kind);
+  return `<div class="sendrow"><span class="hint">${label}</span><div class="row">
+    ${wa?`<a class="btn small ${primary?"":"ghost"}" href="${wa}" target="_blank" rel="noopener">WhatsApp</a>`:""}
+    <a class="btn small ghost" href="${gmailLink(r,kind)}" target="_blank" rel="noopener">Gmail</a>
+    <a class="hint" href="${mailtoLink(r,kind)}">Otra app de correo</a></div></div>`;
+}
+const FILTERS=[
+  ["nuevas","Nuevas",r=>r.estado==="pendiente"],
+  ["cobrar","Por cobrar",r=>r.estado==="confirmada"&&r.pago==="por_pagar"],
+  ["pagadas","Pagadas",r=>r.estado==="confirmada"&&r.pago!=="por_pagar"],
+  ["cerradas","Rechazadas y canceladas",r=>r.estado==="rechazada"||r.estado==="cancelada"],
+  ["todas","Todas",()=>true]
+];
+const toVerify = () => all.filter(r=>r.estado==="confirmada"&&r.pago==="por_pagar"&&r.pagoReportado).length;
+function reqCard(r){
+  const d=docById(r.doctorId), ps=payState(r);
+  const vencido = ps==="porpagar" && r.pagarAntes && Date.now()>r.pagarAntes;
+  let actions="";
+  if(r.estado==="pendiente"){
+    actions=`<div class="form-grid">
+        <label>Hora de la cita<input type="time" id="h-${r.id}" step="300"></label>
+        <label>Monto a cobrar (S/)<input type="number" id="m-${r.id}" min="0" step="1" value="${d&&d.precio!=null?esc(d.precio):""}"></label>
+        <label class="wide">Nota para el paciente (opcional)<input id="n-${r.id}" maxlength="200" placeholder="Consultorio 204, segundo piso"></label></div>
+      ${config.yapeNumero?"":`<p class="notice">Configura tu Yape en la pestaña Pagos para que el mensaje incluya los datos de pago.</p>`}
+      <p class="err" id="e-${r.id}"></p>
+      <div class="row"><button class="small" data-act="confirmar" data-v="${r.id}">Confirmar</button><button class="danger small" data-act="rechazar" data-v="${r.id}">Rechazar</button></div>`;
+  } else if(ps==="porpagar"||ps==="verificando"){
+    actions=`${r.pagoReportado?`<p class="callout"><b>El paciente avisó que ya pagó.</b>${r.operacion?` Operación ${esc(r.operacion)}.`:""} Las capturas se pueden falsificar: confirma que el pago aparece en tu app de Yape antes de marcarla.</p>`:""}
+      ${r.comprobante?`<div class="row"><button class="ghost small" data-act="vercap" data-v="${r.id}">Ver captura</button></div><div id="rc-${r.id}" style="display:flex;flex-direction:column;gap:8px"></div>`:""}
+      <div class="row"><button class="small" data-act="pagada" data-v="${r.id}">Marcar como pagada</button><button class="danger small" data-act="liberar" data-v="${r.id}">Liberar cupo</button></div>
+      ${sendLinks(r,"confirmada","Enviar confirmación con datos de pago")}
+      ${r.pagoReportado?"":sendLinks(r,"recordatorio","Recordar el pago",false)}`;
+  } else if(r.estado==="confirmada"){
+    actions=`${r.comprobante?`<div class="row"><button class="ghost small" data-act="vercap" data-v="${r.id}">Ver captura</button></div><div id="rc-${r.id}" style="display:flex;flex-direction:column;gap:8px"></div>`:""}`+sendLinks(r,"pagado","Avisar que recibiste el pago");
+  } else if(r.estado==="rechazada"){
+    actions=sendLinks(r,"rechazada","Avisar que no hay disponibilidad");
+  } else if(r.estado==="cancelada" && r.liberada){
+    actions=sendLinks(r,"liberada","Avisar que se liberó el cupo");
+  } else if(r.estado==="cancelada"){
+    actions=`<p class="hint">El paciente canceló.${r.pago==="pagado"?" Ya había pagado: coordina la devolución según tu política.":""}</p>`;
+  }
+  return `<article class="card" data-id="${r.id}">
+    <div class="row between"><h3>${esc(r.pacienteNombre)}</h3><div class="row">${pill(r.estado)}${payPill(ps)}</div></div>
+    <dl class="meta" style="margin:0">
+      <dt>Doctor</dt><dd>${esc(r.doctorNombre)} · ${esc(r.especialidad)}</dd>
+      <dt>${r.estado==="confirmada"?"Cita":"Prefiere"}</dt><dd><b>${esc(shortDate(r.fecha))} · ${esc(r.estado==="confirmada"&&r.hora?r.hora:r.turno)}</b> · ${esc(r.modalidad)}</dd>
+      ${r.monto!=null&&r.estado!=="pendiente"?`<dt>Monto</dt><dd>${money(r.monto)}</dd>`:""}
+      ${ps==="porpagar"&&r.pagarAntes?`<dt>Plazo</dt><dd class="${vencido?"late":""}">${vencido?"Venció ":""}${esc(fmtDeadline(r.pagarAntes))}</dd>`:""}
+      <dt>Celular</dt><dd>${esc(r.telefono)}</dd>
+      <dt>Correo</dt><dd style="overflow-wrap:anywhere">${esc(r.pacienteEmail)}</dd>
+      ${r.estado!=="pendiente"&&r.nota?`<dt>Nota</dt><dd>${esc(r.nota)}</dd>`:""}
+    </dl>
+    ${actions}
+  </article>`;
+}
+function renderAdmin(){
+  const v=$("view-admin"); if(!isAdmin){ v.innerHTML=""; return; }
+  const nNew=all.filter(FILTERS[0][2]).length, nVer=toVerify();
+  const head = `<div class="row between"><h2>Administrar</h2><div class="tabs2" role="group" aria-label="Sección">
+      <button data-act="tab" data-v="solicitudes" aria-pressed="${adm.tab==="solicitudes"}">Solicitudes${nNew+nVer?` (${nNew+nVer})`:""}</button>
+      <button data-act="tab" data-v="doctores" aria-pressed="${adm.tab==="doctores"}">Doctores (${doctors.length})</button>
+      <button data-act="tab" data-v="pagos" aria-pressed="${adm.tab==="pagos"}">Pagos</button></div></div>`;
+  if(adm.tab==="solicitudes"){
+    const f=FILTERS.find(x=>x[0]===adm.filtro)||FILTERS[0];
+    let list=all.filter(f[2]);
+    if(f[0]==="cobrar") list.sort((a,b)=>(b.pagoReportado?1:0)-(a.pagoReportado?1:0)||(a.pagarAntes||0)-(b.pagarAntes||0));
+    else if(f[0]==="cerradas"||f[0]==="todas") list.sort((a,b)=>tsMs(b.creada)-tsMs(a.creada));
+    else list.sort((a,b)=>String(a.fecha).localeCompare(String(b.fecha)));
+    v.innerHTML = head + `<div class="chips">${FILTERS.map(([k,l,fn])=>{ const n=all.filter(fn).length;
+        const extra = k==="cobrar"&&nVer ? ` · ${nVer} por verificar` : "";
+        return `<button class="chip small" data-act="filtro" data-v="${k}" aria-pressed="${f[0]===k}">${l}<small>${n}${extra}</small></button>`; }).join("")}</div>
+      ${list.length?`<div class="grid">${list.map(reqCard).join("")}</div>`:`<div class="empty">No hay solicitudes aquí.</div>`}`;
+  } else if(adm.tab==="doctores"){
+    const list=[...doctors].sort((a,b)=>a.nombre.localeCompare(b.nombre));
+    v.innerHTML = head + `<form id="docForm" class="card" novalidate>
+        <h3 id="dfTitle">Agregar doctor</h3>
+        <input type="hidden" id="dId">
+        <div class="form-grid">
+          <label>Nombre completo<input id="dNombre" maxlength="80" placeholder="Dra. Ana Torres"></label>
+          <label>Especialidad<input id="dEsp" maxlength="50" list="espList" placeholder="Pediatría"></label>
+          <datalist id="espList">${[...new Set(["Medicina general","Pediatría","Ginecología","Cardiología","Dermatología","Traumatología","Psicología","Oftalmología","Nutrición",...doctors.map(d=>d.especialidad)])].map(e=>`<option>${esc(e)}</option>`).join("")}</datalist>
+          <label>Distrito o sede<input id="dDist" maxlength="80" placeholder="Miraflores"></label>
+          <label>Modalidad<select id="dMod"><option>Presencial</option><option>Virtual</option><option>Presencial y virtual</option></select></label>
+          <label>Precio de consulta (S/)<input id="dPrecio" type="number" min="0" step="1" placeholder="120"></label>
+          <label>Horario<input id="dHorario" maxlength="100" placeholder="Lun a vie, 9:00–13:00"></label>
+          <label>Seguros<input id="dSeguros" maxlength="100" placeholder="Pacífico, particular"></label>
+          <label>N.º de colegiatura (CMP)<input id="dCmp" maxlength="15" placeholder="012345"></label>
+          <label class="wide">Descripción breve<textarea id="dDesc" rows="2" maxlength="300"></textarea></label>
+          <label class="check wide"><input type="checkbox" id="dActivo" checked> Visible para los pacientes</label>
+        </div>
+        <p class="err" id="dErr" role="alert"></p>
+        <div class="row"><button type="submit" id="dSave">Guardar doctor</button><button type="button" class="ghost" data-act="dcancel" id="dCancel" hidden>Cancelar edición</button></div>
+      </form>
+      ${list.length?`<div class="grid">${list.map(d=>`<article class="card ${d.activo===false?"off":""}">
+        <div class="row between"><h3>${esc(d.nombre)}</h3><span class="tag">${d.activo===false?"Oculto":"Visible"}</span></div>
+        <p class="sub">${esc(d.especialidad)}${d.distrito?" · "+esc(d.distrito):""}${d.precio!=null&&d.precio!==""?" · S/ "+esc(d.precio):""}</p>
+        <div class="row"><button class="ghost small" data-act="dedit" data-v="${d.id}">Editar</button><button class="ghost small" data-act="dtoggle" data-v="${d.id}">${d.activo===false?"Mostrar":"Ocultar"}</button><button class="danger small" data-act="ddel" data-v="${d.id}">Eliminar</button></div>
+      </article>`).join("")}</div>`:`<div class="empty">Agrega tu primer doctor con el formulario.</div>`}`;
+  } else {
+    const c=config||{};
+    const paid=all.filter(r=>r.estado==="confirmada"&&r.pago==="pagado");
+    const owed=all.filter(r=>r.estado==="confirmada"&&r.pago==="por_pagar");
+    const sum=l=>l.reduce((s,r)=>s+Number(r.monto||0),0);
+    const byDoc={}; paid.forEach(r=>{ const k=r.doctorNombre; byDoc[k]=byDoc[k]||{n:0,t:0}; byDoc[k].n++; byDoc[k].t+=Number(r.monto||0); });
+    const rows=Object.entries(byDoc).sort((a,b)=>b[1].t-a[1].t);
+    v.innerHTML = head + `<div class="stats">
+        <div class="stat"><span class="hint">Cobrado</span><b>${money(sum(paid))}</b><span class="hint">${plural(paid.length,"cita pagada","citas pagadas")}</span></div>
+        <div class="stat"><span class="hint">Por cobrar</span><b>${money(sum(owed))}</b><span class="hint">${plural(owed.length,"cita","citas")}${toVerify()?` · ${toVerify()} por verificar`:""}</span></div>
+      </div>
+      <div class="card"><h3>Cobrado por doctor</h3>
+        <p class="hint">Es lo que recibiste por las citas de cada doctor. Úsalo para pagarles su parte.</p>
+        ${rows.length?`<div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Doctor</th><th class="num">Citas pagadas</th><th class="num">Total</th></tr></thead>
+          <tbody>${rows.map(([n,o])=>`<tr><td>${esc(n)}</td><td class="num">${o.n}</td><td class="num">${money(o.t)}</td></tr>`).join("")}</tbody></table></div>`
+          :`<p class="hint">Aún no hay citas pagadas.</p>`}</div>
+      <form id="payForm" class="card" novalidate>
+        <h3>Tu Yape para recibir pagos</h3>
+        <div class="form-grid">
+          <label>Número de Yape<input id="pNum" maxlength="15" inputmode="tel" placeholder="987 654 321" value="${esc(c.yapeNumero||"")}"></label>
+          <label>Nombre que aparece en Yape<input id="pTit" maxlength="60" placeholder="Mauricio V." value="${esc(c.yapeTitular||"")}"></label>
+          <label>Plazo para pagar (desde que confirmas)<select id="pPlazo">${[1,2,3,6,12,24].map(h=>`<option value="${h}" ${Number(c.plazoHoras||3)===h?"selected":""}>${plural(h,"hora","horas")}</option>`).join("")}</select></label>
+          <label class="wide">Política de cancelación (la ve el paciente antes de pagar)<textarea id="pPol" rows="2" maxlength="300">${esc(c.politica??"Puedes cancelar sin costo hasta 24 horas antes de tu cita y te devolvemos el pago completo.")}</textarea></label>
+          <div class="wide"><span class="lbl">Código QR de Yape (opcional)</span>
+            <div class="yape" style="margin-top:6px">${c.qr?`<img src="${c.qr}" alt="QR de Yape actual" class="qr" id="pQrPrev">`:`<div class="qr qr-empty" id="pQrPrev">Sin QR</div>`}
+              <div style="display:flex;flex-direction:column;gap:8px"><input type="file" id="pQr" accept="image/*" aria-label="Subir imagen del QR">
+              ${c.qr?`<button type="button" class="ghost small" data-act="qrdel">Quitar QR</button>`:""}<span class="hint">En Yape: menú > Mi QR > Descargar. Súbelo aquí.</span></div></div></div>
+        </div>
+        <p class="err" id="pErr" role="alert"></p><p class="ok" id="pOk" role="status">${esc(payMsg)}</p>
+        <div><button type="submit" id="pSave">Guardar datos de pago</button></div>
+      </form>`;
+  }
+}
+let pendingQr, payMsg="";
+function resizeQr(file){
+  return new Promise((res,rej)=>{
+    const img=new Image(), url=URL.createObjectURL(file);
+    img.onload=()=>{ const max=360, s=Math.min(1,max/Math.max(img.width,img.height));
+      const cv=document.createElement("canvas"); cv.width=Math.round(img.width*s); cv.height=Math.round(img.height*s);
+      const cx=cv.getContext("2d"); cx.fillStyle="#fff"; cx.fillRect(0,0,cv.width,cv.height); cx.drawImage(img,0,0,cv.width,cv.height);
+      URL.revokeObjectURL(url); let d=cv.toDataURL("image/png"); if(d.length>400000) d=cv.toDataURL("image/jpeg",0.9); res(d); };
+    img.onerror=()=>{ URL.revokeObjectURL(url); rej(new Error("img")); };
+    img.src=url;
+  });
+}
+const DF={nombre:"dNombre",especialidad:"dEsp",distrito:"dDist",modalidad:"dMod",precio:"dPrecio",horario:"dHorario",seguros:"dSeguros",cmp:"dCmp",descripcion:"dDesc"};
+$("view-admin").addEventListener("change", async e=>{
+  if(e.target.id!=="pQr"||!e.target.files[0]) return;
+  try{ pendingQr=await resizeQr(e.target.files[0]); const p=$("pQrPrev"); p.outerHTML=`<img src="${pendingQr}" alt="QR de Yape nuevo" class="qr" id="pQrPrev">`; $("pOk").textContent="QR listo. Pulsa «Guardar datos de pago»."; }
+  catch(_){ $("pErr").textContent="No pude leer esa imagen. Prueba con otra foto o captura."; }
+});
+$("view-admin").addEventListener("click", async e=>{
+  const b=e.target.closest("[data-act]"); if(!b) return;
+  const a=b.dataset.act, id=b.dataset.v;
+  if(a==="tab"){ adm.tab=id; pendingQr=undefined; payMsg=""; renderAdmin(); }
+  else if(a==="filtro"){ adm.filtro=id; renderAdmin(); }
+  else if(a==="confirmar"){
+    const hora=$("h-"+id).value, montoStr=$("m-"+id).value, nota=$("n-"+id).value.trim().slice(0,200);
+    if(!hora){ $("e-"+id).textContent="Pon la hora de la cita para confirmar."; $("h-"+id).focus(); return; }
+    if(montoStr===""||Number(montoStr)<0){ $("e-"+id).textContent="Pon el monto a cobrar (0 si es gratis)."; $("m-"+id).focus(); return; }
+    const monto=Number(montoStr);
+    const data = monto>0
+      ? {estado:"confirmada",hora,nota,monto,pago:"por_pagar",pagoReportado:false,pagarAntes:Date.now()+Number(config.plazoHoras||3)*3600000}
+      : {estado:"confirmada",hora,nota,monto:0,pago:"pagado"};
+    b.disabled=true;
+    try{ await api.updateRequest(id,data); adm.filtro = monto>0 ? "cobrar" : "pagadas"; }catch(ex){ b.disabled=false; $("e-"+id).textContent="No se pudo guardar ("+(ex.code||"error")+")."; }
+  }
+  else if(a==="rechazar"){
+    if(b.dataset.sure!=="1"){ b.dataset.sure="1"; b.textContent="¿Rechazar? Pulsa otra vez"; return; }
+    const nota=$("n-"+id).value.trim().slice(0,200);
+    b.disabled=true;
+    try{ await api.updateRequest(id,{estado:"rechazada",nota}); adm.filtro="cerradas"; }catch(_){ b.disabled=false; }
+  }
+  else if(a==="pagada"){
+    b.disabled=true;
+    try{ await api.updateRequest(id,{pago:"pagado",pagadoEn:Date.now()}); adm.filtro="pagadas"; }catch(_){ b.disabled=false; }
+  }
+  else if(a==="liberar"){
+    if(b.dataset.sure!=="1"){ b.dataset.sure="1"; b.textContent="¿Liberar? Pulsa otra vez"; return; }
+    b.disabled=true;
+    try{ await api.updateRequest(id,{estado:"cancelada",liberada:true,nota:"No se recibió el pago a tiempo."}); adm.filtro="cerradas"; }catch(_){ b.disabled=false; }
+  }
+  else if(a==="vercap"){
+    const box=$("rc-"+id); if(box.firstChild){ box.innerHTML=""; b.textContent="Ver captura"; return; }
+    b.disabled=true; b.textContent="Cargando…";
+    try{
+      const img=await api.getReceipt(id);
+      box.innerHTML = img ? `<img class="receipt" src="${img}" alt="Captura de pago de Yape enviada por el paciente"><button class="danger small" style="align-self:flex-start" data-act="delcap" data-v="${id}">Borrar captura</button>` : `<p class="hint">La captura ya fue borrada.</p>`;
+      b.textContent="Ocultar captura";
+    }catch(ex){ box.innerHTML=`<p class="err">No se pudo cargar la captura.</p>`; b.textContent="Ver captura"; }
+    b.disabled=false;
+  }
+  else if(a==="delcap"){
+    if(b.dataset.sure!=="1"){ b.dataset.sure="1"; b.textContent="¿Borrar? Pulsa otra vez"; return; }
+    b.disabled=true;
+    try{ await api.deleteReceipt(id); await api.updateRequest(id,{comprobante:false}); }catch(_){ b.disabled=false; b.textContent="No se pudo borrar"; }
+  }
+  else if(a==="qrdel"){ pendingQr=null; const p=$("pQrPrev"); p.outerHTML=`<div class="qr qr-empty" id="pQrPrev">Sin QR</div>`; b.remove(); $("pOk").textContent="Se quitará el QR al guardar."; }
+  else if(a==="dedit"){
+    const d=docById(id); if(!d) return;
+    $("dId").value=d.id; for(const [k,f] of Object.entries(DF)) $(f).value=d[k]??"";
+    $("dActivo").checked=d.activo!==false; $("dfTitle").textContent="Editar doctor"; $("dCancel").hidden=false;
+    $("docForm").scrollIntoView({behavior:"smooth",block:"start"}); $("dNombre").focus();
+  }
+  else if(a==="dcancel"){ renderAdmin(); }
+  else if(a==="dtoggle"){ const d=docById(id); await api.updateDoctor(id,{activo:d.activo===false}); }
+  else if(a==="ddel"){
+    if(b.dataset.sure!=="1"){ b.dataset.sure="1"; b.textContent="¿Seguro? Pulsa otra vez"; return; }
+    await api.deleteDoctor(id);
+  }
+});
+$("view-admin").addEventListener("submit", async e=>{
+  e.preventDefault();
+  if(e.target.id==="payForm"){
+    const num=$("pNum").value.trim();
+    if(num && digits(num).length<9){ $("pErr").textContent="Revisa el número de Yape (9 dígitos)."; $("pNum").focus(); return; }
+    const data={yapeNumero:num,yapeTitular:$("pTit").value.trim(),plazoHoras:Number($("pPlazo").value),politica:$("pPol").value.trim(),qr: pendingQr===undefined ? (config.qr||"") : (pendingQr||"")};
+    $("pSave").disabled=true; $("pErr").textContent="";
+    try{ payMsg="Datos de pago guardados."; await api.saveConfig(data); pendingQr=undefined; const o=$("pOk"); if(o) o.textContent=payMsg; }
+    catch(ex){ $("pErr").textContent="No se pudo guardar ("+(ex.code||"error")+")."; }
+    finally{ const s=$("pSave"); if(s) s.disabled=false; }
+    return;
+  }
+  if(e.target.id!=="docForm") return;
+  const data={}; for(const [k,f] of Object.entries(DF)) data[k]=$(f).value.trim();
+  if(!data.nombre||!data.especialidad){ $("dErr").textContent="Nombre y especialidad son obligatorios."; return; }
+  data.precio = data.precio==="" ? null : Number(data.precio);
+  data.activo = $("dActivo").checked;
+  $("dSave").disabled=true;
+  try{ await api.saveDoctor($("dId").value||null,data); }
+  catch(ex){ $("dErr").textContent="No se pudo guardar ("+(ex.code||"error")+")."; $("dSave").disabled=false; }
+});
+
+/* ---------- Ventana de acceso (Google o correo) ---------- */
+let authResolve=null, authMode="login";
+const AUTH_ERR={
+  "auth/invalid-credential":"Correo o contraseña incorrectos.","auth/wrong-password":"Correo o contraseña incorrectos.","auth/user-not-found":"No hay una cuenta con ese correo. Elige «Crear cuenta».",
+  "auth/email-already-in-use":"Ese correo ya tiene una cuenta. Elige «Ya tengo cuenta».","auth/invalid-email":"Revisa el correo, parece incompleto.",
+  "auth/weak-password":"La contraseña debe tener al menos 6 caracteres.","auth/too-many-requests":"Demasiados intentos. Espera unos minutos.",
+  "auth/popup-blocked":"Tu navegador bloqueó la ventana de Google. Permite ventanas emergentes.","auth/unauthorized-domain":"Este sitio todavía no está autorizado en Firebase.",
+  "auth/operation-not-allowed":"El acceso con correo no está activado todavía. Usa Google o avisa al administrador.","auth/network-request-failed":"Sin conexión. Revisa tu internet."
+};
+function setAuthMode(m){
+  authMode=m;
+  document.querySelectorAll("#authDlg [data-mode]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.mode===m));
+  $("aNameWrap").hidden=m!=="signup"; $("aPassHint").hidden=m!=="signup"; $("aReset").hidden=m!=="login";
+  $("aPass").autocomplete = m==="signup"?"new-password":"current-password";
+  $("aSubmit").textContent = m==="signup"?"Crear cuenta y continuar":"Entrar";
+  $("aErr").textContent=""; $("aOk").textContent="";
+}
+function openAuth(lead){
+  $("authLead").textContent = lead || "Así podrás ver el estado de tus citas en cualquier momento.";
+  setAuthMode("login"); $("aPass").value="";
+  if(!$("authDlg").open) $("authDlg").showModal();
+  return new Promise(res=>{ authResolve=res; });
+}
+function finishAuth(u){ const r=authResolve; authResolve=null; if($("authDlg").open) $("authDlg").close(); r&&r(u); }
+$("authDlg").addEventListener("close",()=>{ if(authResolve){ const r=authResolve; authResolve=null; r(null); } });
+$("authClose").addEventListener("click",()=>$("authDlg").close());
+$("authForm").addEventListener("input",()=>{ $("aErr").textContent=""; });
+document.querySelectorAll("#authDlg [data-mode]").forEach(b=>b.addEventListener("click",()=>setAuthMode(b.dataset.mode)));
+$("authGoogle").addEventListener("click", async ()=>{
+  $("aErr").textContent="";
+  try{ finishAuth(await api.loginGoogle()); }
+  catch(ex){ if(ex.code!=="auth/popup-closed-by-user"&&ex.code!=="auth/cancelled-popup-request") $("aErr").textContent=AUTH_ERR[ex.code]||"No se pudo entrar con Google."; }
+});
+$("authForm").addEventListener("submit", async e=>{
+  e.preventDefault();
+  const email=$("aEmail").value.trim(), pass=$("aPass").value, name=$("aName").value.trim();
+  $("aErr").textContent=""; $("aOk").textContent="";
+  if(authMode==="signup" && !name){ $("aErr").textContent="Escribe tu nombre."; $("aName").focus(); return; }
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ $("aErr").textContent="Revisa el correo, parece incompleto."; $("aEmail").focus(); return; }
+  if(pass.length<6){ $("aErr").textContent="La contraseña debe tener al menos 6 caracteres."; $("aPass").focus(); return; }
+  const btn=$("aSubmit"); btn.disabled=true;
+  try{ finishAuth(authMode==="signup" ? await api.signupEmail(name,email,pass) : await api.loginEmail(email,pass)); }
+  catch(ex){ $("aErr").textContent=AUTH_ERR[ex.code]||"No se pudo continuar. Inténtalo otra vez."; }
+  finally{ btn.disabled=false; }
+});
+$("aReset").addEventListener("click", async ()=>{
+  const email=$("aEmail").value.trim(); $("aErr").textContent=""; $("aOk").textContent="";
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ $("aErr").textContent="Escribe tu correo arriba y vuelve a pulsar aquí."; $("aEmail").focus(); return; }
+  try{ await api.resetPassword(email); $("aOk").textContent="Si ese correo tiene cuenta, te enviamos un enlace para crear una nueva contraseña."; }
+  catch(ex){ $("aErr").textContent=AUTH_ERR[ex.code]||"No se pudo enviar el correo."; }
+});
+
+/* ---------- Cabecera y sesión ---------- */
+function renderHeader(){
+  $("who").textContent = user ? (user.name||user.email) : "";
+  $("loginBtn").hidden = !!user; $("logoutBtn").hidden = !user || api.demo;
+  $("adminTab").hidden = !isAdmin;
+  const p=all.filter(r=>r.estado==="pendiente").length+all.filter(r=>r.estado==="confirmada"&&r.pago==="por_pagar"&&r.pagoReportado).length;
+  $("pendBadge").hidden = !(isAdmin && p); $("pendBadge").textContent = p;
+  if(api.demo){
+    const role = !user ? "none" : isAdmin ? "admin" : "paciente";
+    document.querySelectorAll("#demoBar [data-role]").forEach(b=>b.setAttribute("aria-pressed", b.dataset.role===role));
+  }
+}
+function refresh(){
+  renderHeader(); const t=currentTab();
+  if(t==="inicio"){ if(flow.step<=2||flow.step===5) renderFlow(); return; }
+  const ae=document.activeElement, view=$("view-"+t);
+  if(view && view.contains(ae) && /INPUT|TEXTAREA|SELECT/.test(ae.tagName)){ ae.addEventListener("blur",()=>setTimeout(refresh,400),{once:true}); return; }
+  route();
+}
+
+(async function start(){
+  $("view-inicio").innerHTML=`<div class="empty">Cargando…</div>`;
+  api = await loadApi();
+  if(!api){ $("view-inicio").innerHTML=`<div class="empty">No se pudo conectar con el servidor. Revisa tu conexión a internet y recarga la página.<br><br><button onclick="location.reload()">Recargar</button></div>`; return; }
+  if(api.demo){
+    $("demoBar").hidden=false;
+    $("demoBar").addEventListener("click",e=>{ const b=e.target.closest("[data-role]"); if(!b) return; api.setRole(b.dataset.role); if(b.dataset.role==="admin") location.hash="#admin"; else if(location.hash==="#admin") location.hash="#inicio"; });
+  }
+  $("loginBtn").addEventListener("click",()=>openAuth());
+  $("logoutBtn").addEventListener("click",()=>api.logout());
+  api.watchConfig(c=>{ config=c||{}; refresh(); });
+  api.watchDoctors(list=>{ doctors=list; refresh(); }, err=>{ $("view-inicio").innerHTML=`<div class="empty">No se pudo cargar la lista de doctores (${esc(err.code)}).</div>`; });
+  api.onAuth(u=>{
+    user=u; isAdmin=!!(u&&u.verified&&ADMINS.includes(u.email));
+    if(unMine){unMine();unMine=null;} if(unAll){unAll();unAll=null;} mine=[]; all=[];
+    if(u) unMine=api.watchMine(u.uid, l=>{ mine=l; refresh(); }, ()=>{});
+    if(isAdmin) unAll=api.watchAll(l=>{ all=l; refresh(); }, ()=>{});
+    if(flow.step===4){ const f=$("fSend"); if(f&&!f.disabled) f.textContent=u?"Enviar solicitud":"Continuar y enviar"; }
+    if(currentTab()!=="inicio") route();
+    refresh();
+  });
+  route();
+})();
+</script>
+</body>
+</html>
