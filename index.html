@@ -204,6 +204,23 @@ details.paid[open] summary{display:none}
 .receipt{max-width:100%;max-height:520px;object-fit:contain;border:1px solid var(--line);border-radius:10px;background:#fff;align-self:flex-start}
 .thumb{max-width:140px;max-height:180px;border:1px solid var(--line);border-radius:8px}
 .sendrow{display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--line);padding-top:10px}
+.today{background:var(--primary-soft);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:4px}
+.today b{font-size:1.15rem}
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.cal .wd{font-size:.78rem;color:var(--muted);text-align:center;font-weight:600}
+.cal button{padding:8px 0;min-height:44px;font-size:.9rem;background:var(--surface);color:var(--ink);border:1.5px solid var(--line);border-radius:10px;display:flex;flex-direction:column;align-items:center;line-height:1.1}
+.cal button small{font-size:.68rem;color:var(--muted)}
+.cal button[aria-pressed="true"]{background:#fbe4e4;border-color:#e3a5a6;color:#a3282a}
+.cal button[aria-pressed="true"] small{color:#a3282a}
+.qrbox{display:flex;gap:18px;flex-wrap:wrap;align-items:center}
+.qrbox img{width:180px;height:180px;border:1px solid var(--line);border-radius:12px;background:#fff}
+.chip.blocked{text-decoration:line-through}
+.sitefoot{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;padding:22px 16px 34px;font-size:.88rem;color:var(--muted)}
+.policy h3{margin-top:18px}
+.policy p,.policy li{line-height:1.6}
+.policy ul{padding-left:20px;margin:6px 0}
+.policy .card{display:flex;flex-direction:column;gap:4px}
+.policy .card p{margin:0}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
 .stat{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:2px}
 .stat b{font-size:1.6rem;font-variant-numeric:tabular-nums}
@@ -223,7 +240,7 @@ details.paid[open] summary{display:none}
     <span><strong>Demostración:</strong> datos de ejemplo, nada se guarda.</span>
     <span>Ver como</span>
     <div class="seg" role="group" aria-label="Ver como">
-      <button data-role="none">Visitante</button><button data-role="paciente">Paciente</button><button data-role="admin">Administrador</button>
+      <button data-role="none">Visitante</button><button data-role="paciente">Paciente</button><button data-role="doctor">Doctor</button><button data-role="admin">Administrador</button>
     </div>
   </div>
 </div>
@@ -235,6 +252,7 @@ details.paid[open] summary{display:none}
   <nav class="nav" aria-label="Secciones">
     <a href="#inicio" data-tab="inicio">Pedir cita</a>
     <a href="#mis-citas" data-tab="mis-citas">Mis citas</a>
+    <a href="#doctor" data-tab="doctor" id="docTab" hidden>Mi consultorio</a>
     <a href="#admin" data-tab="admin" id="adminTab" hidden>Administrar<span class="badge" id="pendBadge" hidden></span></a>
   </nav>
 </header>
@@ -243,6 +261,7 @@ details.paid[open] summary{display:none}
     <div class="row between"><h2 id="authTitle">Entra para continuar</h2><button class="linkbtn" id="authClose" aria-label="Cerrar">Cerrar</button></div>
     <p class="sub" id="authLead">Así podrás ver el estado de tu cita en cualquier momento.</p>
     <button class="gbtn block" id="authGoogle"><span class="gmark" aria-hidden="true">G</span> Continuar con Google</button>
+    <p class="hint" style="margin:0;text-align:center">Al entrar aceptas la <a href="#privacidad" target="_blank" rel="noopener">política de privacidad</a>.</p>
     <div class="or">o con tu correo</div>
     <div class="tabs2" role="group" aria-label="Tipo de acceso">
       <button data-mode="login" aria-pressed="true">Ya tengo cuenta</button><button data-mode="signup" aria-pressed="false">Crear cuenta</button>
@@ -251,7 +270,7 @@ details.paid[open] summary{display:none}
       <label id="aNameWrap" hidden>Tu nombre<input id="aName" maxlength="80" autocomplete="name"></label>
       <label>Correo<input id="aEmail" type="email" autocomplete="email" placeholder="tu@correo.com"></label>
       <label>Contraseña<input id="aPass" type="password" autocomplete="current-password" minlength="6"></label>
-      <p class="hint" id="aPassHint" hidden>Mínimo 6 caracteres.</p>
+      <p class="hint" id="aPassHint" hidden>Mínimo 6 caracteres. Al crear tu cuenta aceptas la <a href="#privacidad" target="_blank" rel="noopener">política de privacidad</a>.</p>
       <p class="err" id="aErr" role="alert"></p>
       <p class="ok" id="aOk" role="status"></p>
       <button class="block" id="aSubmit" type="submit">Entrar</button>
@@ -262,9 +281,18 @@ details.paid[open] summary{display:none}
 <main>
   <section id="view-inicio" class="col"></section>
   <section id="view-mis-citas" class="col" hidden></section>
+  <section id="view-doctor" class="col col-wide" hidden></section>
   <section id="view-admin" class="col col-wide" hidden></section>
+  <section id="view-privacidad" class="col" hidden></section>
 </main>
+<footer class="sitefoot"><a href="#privacidad">Política de privacidad</a><span aria-hidden="true">·</span><span>Agenda Médica</span></footer>
 
+<script>
+/* QR Code Generator for JavaScript (qrcode-generator 1.4.4) · Copyright (c) 2009 Kazuhiko Arase · Licencia MIT */
+// Copyright (c) 2009 Kazuhiko Arase
+// Licensed under the MIT license:
+var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],f={},c=function(t,r){o=function(t){for(var r=new Array(t),e=0;e<t;e+=1){r[e]=new Array(t);for(var n=0;n<t;n+=1)r[e][n]=null}return r}(i=4*e+17),l(0,0),l(i-7,0),l(0,i-7),s(),h(),d(t,r),e>=7&&v(t),null==a&&(a=p(e,n,u)),w(a,r)},l=function(t,r){for(var e=-1;e<=7;e+=1)if(!(t+e<=-1||i<=t+e))for(var n=-1;n<=7;n+=1)r+n<=-1||i<=r+n||(o[t+e][r+n]=0<=e&&e<=6&&(0==n||6==n)||0<=n&&n<=6&&(0==e||6==e)||2<=e&&e<=4&&2<=n&&n<=4)},h=function(){for(var t=8;t<i-8;t+=1)null==o[t][6]&&(o[t][6]=t%2==0);for(var r=8;r<i-8;r+=1)null==o[6][r]&&(o[6][r]=r%2==0)},s=function(){for(var t=B.getPatternPosition(e),r=0;r<t.length;r+=1)for(var n=0;n<t.length;n+=1){var i=t[r],a=t[n];if(null==o[i][a])for(var u=-2;u<=2;u+=1)for(var f=-2;f<=2;f+=1)o[i+u][a+f]=-2==u||2==u||-2==f||2==f||0==u&&0==f}},v=function(t){for(var r=B.getBCHTypeNumber(e),n=0;n<18;n+=1){var a=!t&&1==(r>>n&1);o[Math.floor(n/3)][n%3+i-8-3]=a}for(n=0;n<18;n+=1){a=!t&&1==(r>>n&1);o[n%3+i-8-3][Math.floor(n/3)]=a}},d=function(t,r){for(var e=n<<3|r,a=B.getBCHTypeInfo(e),u=0;u<15;u+=1){var f=!t&&1==(a>>u&1);u<6?o[u][8]=f:u<8?o[u+1][8]=f:o[i-15+u][8]=f}for(u=0;u<15;u+=1){f=!t&&1==(a>>u&1);u<8?o[8][i-u-1]=f:u<9?o[8][15-u-1+1]=f:o[8][15-u-1]=f}o[i-8][8]=!t},w=function(t,r){for(var e=-1,n=i-1,a=7,u=0,f=B.getMaskFunction(r),c=i-1;c>0;c-=2)for(6==c&&(c-=1);;){for(var g=0;g<2;g+=1)if(null==o[n][c-g]){var l=!1;u<t.length&&(l=1==(t[u]>>>a&1)),f(n,c-g)&&(l=!l),o[n][c-g]=l,-1==(a-=1)&&(u+=1,a=7)}if((n+=e)<0||i<=n){n-=e,e=-e;break}}},p=function(t,r,e){for(var n=A.getRSBlocks(t,r),o=b(),i=0;i<e.length;i+=1){var a=e[i];o.put(a.getMode(),4),o.put(a.getLength(),B.getLengthInBits(a.getMode(),t)),a.write(o)}var u=0;for(i=0;i<n.length;i+=1)u+=n[i].dataCount;if(o.getLengthInBits()>8*u)throw"code length overflow. ("+o.getLengthInBits()+">"+8*u+")";for(o.getLengthInBits()+4<=8*u&&o.put(0,4);o.getLengthInBits()%8!=0;)o.putBit(!1);for(;!(o.getLengthInBits()>=8*u||(o.put(236,8),o.getLengthInBits()>=8*u));)o.put(17,8);return function(t,r){for(var e=0,n=0,o=0,i=new Array(r.length),a=new Array(r.length),u=0;u<r.length;u+=1){var f=r[u].dataCount,c=r[u].totalCount-f;n=Math.max(n,f),o=Math.max(o,c),i[u]=new Array(f);for(var g=0;g<i[u].length;g+=1)i[u][g]=255&t.getBuffer()[g+e];e+=f;var l=B.getErrorCorrectPolynomial(c),h=k(i[u],l.getLength()-1).mod(l);for(a[u]=new Array(l.getLength()-1),g=0;g<a[u].length;g+=1){var s=g+h.getLength()-a[u].length;a[u][g]=s>=0?h.getAt(s):0}}var v=0;for(g=0;g<r.length;g+=1)v+=r[g].totalCount;var d=new Array(v),w=0;for(g=0;g<n;g+=1)for(u=0;u<r.length;u+=1)g<i[u].length&&(d[w]=i[u][g],w+=1);for(g=0;g<o;g+=1)for(u=0;u<r.length;u+=1)g<a[u].length&&(d[w]=a[u][g],w+=1);return d}(o,n)};f.addData=function(t,r){var e=null;switch(r=r||"Byte"){case"Numeric":e=M(t);break;case"Alphanumeric":e=x(t);break;case"Byte":e=m(t);break;case"Kanji":e=L(t);break;default:throw"mode:"+r}u.push(e),a=null},f.isDark=function(t,r){if(t<0||i<=t||r<0||i<=r)throw t+","+r;return o[t][r]},f.getModuleCount=function(){return i},f.make=function(){if(e<1){for(var t=1;t<40;t++){for(var r=A.getRSBlocks(t,n),o=b(),i=0;i<u.length;i++){var a=u[i];o.put(a.getMode(),4),o.put(a.getLength(),B.getLengthInBits(a.getMode(),t)),a.write(o)}var g=0;for(i=0;i<r.length;i++)g+=r[i].dataCount;if(o.getLengthInBits()<=8*g)break}e=t}c(!1,function(){for(var t=0,r=0,e=0;e<8;e+=1){c(!0,e);var n=B.getLostPoint(f);(0==e||t>n)&&(t=n,r=e)}return r}())},f.createTableTag=function(t,r){t=t||2;var e="";e+='<table style="',e+=" border-width: 0px; border-style: none;",e+=" border-collapse: collapse;",e+=" padding: 0px; margin: "+(r=void 0===r?4*t:r)+"px;",e+='">',e+="<tbody>";for(var n=0;n<f.getModuleCount();n+=1){e+="<tr>";for(var o=0;o<f.getModuleCount();o+=1)e+='<td style="',e+=" border-width: 0px; border-style: none;",e+=" border-collapse: collapse;",e+=" padding: 0px; margin: 0px;",e+=" width: "+t+"px;",e+=" height: "+t+"px;",e+=" background-color: ",e+=f.isDark(n,o)?"#000000":"#ffffff",e+=";",e+='"/>';e+="</tr>"}return e+="</tbody>",e+="</table>"},f.createSvgTag=function(t,r,e,n){var o={};"object"==typeof arguments[0]&&(t=(o=arguments[0]).cellSize,r=o.margin,e=o.alt,n=o.title),t=t||2,r=void 0===r?4*t:r,(e="string"==typeof e?{text:e}:e||{}).text=e.text||null,e.id=e.text?e.id||"qrcode-description":null,(n="string"==typeof n?{text:n}:n||{}).text=n.text||null,n.id=n.text?n.id||"qrcode-title":null;var i,a,u,c,g=f.getModuleCount()*t+2*r,l="";for(c="l"+t+",0 0,"+t+" -"+t+",0 0,-"+t+"z ",l+='<svg version="1.1" xmlns="http://www.w3.org/2000/svg"',l+=o.scalable?"":' width="'+g+'px" height="'+g+'px"',l+=' viewBox="0 0 '+g+" "+g+'" ',l+=' preserveAspectRatio="xMinYMin meet"',l+=n.text||e.text?' role="img" aria-labelledby="'+y([n.id,e.id].join(" ").trim())+'"':"",l+=">",l+=n.text?'<title id="'+y(n.id)+'">'+y(n.text)+"</title>":"",l+=e.text?'<description id="'+y(e.id)+'">'+y(e.text)+"</description>":"",l+='<rect width="100%" height="100%" fill="white" cx="0" cy="0"/>',l+='<path d="',a=0;a<f.getModuleCount();a+=1)for(u=a*t+r,i=0;i<f.getModuleCount();i+=1)f.isDark(a,i)&&(l+="M"+(i*t+r)+","+u+c);return l+='" stroke="transparent" fill="black"/>',l+="</svg>"},f.createDataURL=function(t,r){t=t||2,r=void 0===r?4*t:r;var e=f.getModuleCount()*t+2*r,n=r,o=e-r;return I(e,e,function(r,e){if(n<=r&&r<o&&n<=e&&e<o){var i=Math.floor((r-n)/t),a=Math.floor((e-n)/t);return f.isDark(a,i)?0:1}return 1})},f.createImgTag=function(t,r,e){t=t||2,r=void 0===r?4*t:r;var n=f.getModuleCount()*t+2*r,o="";return o+="<img",o+=' src="',o+=f.createDataURL(t,r),o+='"',o+=' width="',o+=n,o+='"',o+=' height="',o+=n,o+='"',e&&(o+=' alt="',o+=y(e),o+='"'),o+="/>"};var y=function(t){for(var r="",e=0;e<t.length;e+=1){var n=t.charAt(e);switch(n){case"<":r+="&lt;";break;case">":r+="&gt;";break;case"&":r+="&amp;";break;case'"':r+="&quot;";break;default:r+=n}}return r};return f.createASCII=function(t,r){if((t=t||1)<2)return function(t){t=void 0===t?2:t;var r,e,n,o,i,a=1*f.getModuleCount()+2*t,u=t,c=a-t,g={"██":"█","█ ":"▀"," █":"▄","  ":" "},l={"██":"▀","█ ":"▀"," █":" ","  ":" "},h="";for(r=0;r<a;r+=2){for(n=Math.floor((r-u)/1),o=Math.floor((r+1-u)/1),e=0;e<a;e+=1)i="█",u<=e&&e<c&&u<=r&&r<c&&f.isDark(n,Math.floor((e-u)/1))&&(i=" "),u<=e&&e<c&&u<=r+1&&r+1<c&&f.isDark(o,Math.floor((e-u)/1))?i+=" ":i+="█",h+=t<1&&r+1>=c?l[i]:g[i];h+="\n"}return a%2&&t>0?h.substring(0,h.length-a-1)+Array(a+1).join("▀"):h.substring(0,h.length-1)}(r);t-=1,r=void 0===r?2*t:r;var e,n,o,i,a=f.getModuleCount()*t+2*r,u=r,c=a-r,g=Array(t+1).join("██"),l=Array(t+1).join("  "),h="",s="";for(e=0;e<a;e+=1){for(o=Math.floor((e-u)/t),s="",n=0;n<a;n+=1)i=1,u<=n&&n<c&&u<=e&&e<c&&f.isDark(o,Math.floor((n-u)/t))&&(i=0),s+=i?g:l;for(o=0;o<t;o+=1)h+=s+"\n"}return h.substring(0,h.length-1)},f.renderTo2dContext=function(t,r){r=r||2;for(var e=f.getModuleCount(),n=0;n<e;n++)for(var o=0;o<e;o++)t.fillStyle=f.isDark(n,o)?"black":"white",t.fillRect(n*r,o*r,r,r)},f};t.stringToBytes=(t.stringToBytesFuncs={default:function(t){for(var r=[],e=0;e<t.length;e+=1){var n=t.charCodeAt(e);r.push(255&n)}return r}}).default,t.createStringToBytes=function(t,r){var e=function(){for(var e=S(t),n=function(){var t=e.read();if(-1==t)throw"eof";return t},o=0,i={};;){var a=e.read();if(-1==a)break;var u=n(),f=n()<<8|n();i[String.fromCharCode(a<<8|u)]=f,o+=1}if(o!=r)throw o+" != "+r;return i}(),n="?".charCodeAt(0);return function(t){for(var r=[],o=0;o<t.length;o+=1){var i=t.charCodeAt(o);if(i<128)r.push(i);else{var a=e[t.charAt(o)];"number"==typeof a?(255&a)==a?r.push(a):(r.push(a>>>8),r.push(255&a)):r.push(n)}}return r}};var r,e,n,o,i,a=1,u=2,f=4,c=8,g={L:1,M:0,Q:3,H:2},l=0,h=1,s=2,v=3,d=4,w=5,p=6,y=7,B=(r=[[],[6,18],[6,22],[6,26],[6,30],[6,34],[6,22,38],[6,24,42],[6,26,46],[6,28,50],[6,30,54],[6,32,58],[6,34,62],[6,26,46,66],[6,26,48,70],[6,26,50,74],[6,30,54,78],[6,30,56,82],[6,30,58,86],[6,34,62,90],[6,28,50,72,94],[6,26,50,74,98],[6,30,54,78,102],[6,28,54,80,106],[6,32,58,84,110],[6,30,58,86,114],[6,34,62,90,118],[6,26,50,74,98,122],[6,30,54,78,102,126],[6,26,52,78,104,130],[6,30,56,82,108,134],[6,34,60,86,112,138],[6,30,58,86,114,142],[6,34,62,90,118,146],[6,30,54,78,102,126,150],[6,24,50,76,102,128,154],[6,28,54,80,106,132,158],[6,32,58,84,110,136,162],[6,26,54,82,110,138,166],[6,30,58,86,114,142,170]],e=1335,n=7973,i=function(t){for(var r=0;0!=t;)r+=1,t>>>=1;return r},(o={}).getBCHTypeInfo=function(t){for(var r=t<<10;i(r)-i(e)>=0;)r^=e<<i(r)-i(e);return 21522^(t<<10|r)},o.getBCHTypeNumber=function(t){for(var r=t<<12;i(r)-i(n)>=0;)r^=n<<i(r)-i(n);return t<<12|r},o.getPatternPosition=function(t){return r[t-1]},o.getMaskFunction=function(t){switch(t){case l:return function(t,r){return(t+r)%2==0};case h:return function(t,r){return t%2==0};case s:return function(t,r){return r%3==0};case v:return function(t,r){return(t+r)%3==0};case d:return function(t,r){return(Math.floor(t/2)+Math.floor(r/3))%2==0};case w:return function(t,r){return t*r%2+t*r%3==0};case p:return function(t,r){return(t*r%2+t*r%3)%2==0};case y:return function(t,r){return(t*r%3+(t+r)%2)%2==0};default:throw"bad maskPattern:"+t}},o.getErrorCorrectPolynomial=function(t){for(var r=k([1],0),e=0;e<t;e+=1)r=r.multiply(k([1,C.gexp(e)],0));return r},o.getLengthInBits=function(t,r){if(1<=r&&r<10)switch(t){case a:return 10;case u:return 9;case f:case c:return 8;default:throw"mode:"+t}else if(r<27)switch(t){case a:return 12;case u:return 11;case f:return 16;case c:return 10;default:throw"mode:"+t}else{if(!(r<41))throw"type:"+r;switch(t){case a:return 14;case u:return 13;case f:return 16;case c:return 12;default:throw"mode:"+t}}},o.getLostPoint=function(t){for(var r=t.getModuleCount(),e=0,n=0;n<r;n+=1)for(var o=0;o<r;o+=1){for(var i=0,a=t.isDark(n,o),u=-1;u<=1;u+=1)if(!(n+u<0||r<=n+u))for(var f=-1;f<=1;f+=1)o+f<0||r<=o+f||0==u&&0==f||a==t.isDark(n+u,o+f)&&(i+=1);i>5&&(e+=3+i-5)}for(n=0;n<r-1;n+=1)for(o=0;o<r-1;o+=1){var c=0;t.isDark(n,o)&&(c+=1),t.isDark(n+1,o)&&(c+=1),t.isDark(n,o+1)&&(c+=1),t.isDark(n+1,o+1)&&(c+=1),0!=c&&4!=c||(e+=3)}for(n=0;n<r;n+=1)for(o=0;o<r-6;o+=1)t.isDark(n,o)&&!t.isDark(n,o+1)&&t.isDark(n,o+2)&&t.isDark(n,o+3)&&t.isDark(n,o+4)&&!t.isDark(n,o+5)&&t.isDark(n,o+6)&&(e+=40);for(o=0;o<r;o+=1)for(n=0;n<r-6;n+=1)t.isDark(n,o)&&!t.isDark(n+1,o)&&t.isDark(n+2,o)&&t.isDark(n+3,o)&&t.isDark(n+4,o)&&!t.isDark(n+5,o)&&t.isDark(n+6,o)&&(e+=40);var g=0;for(o=0;o<r;o+=1)for(n=0;n<r;n+=1)t.isDark(n,o)&&(g+=1);return e+=Math.abs(100*g/r/r-50)/5*10},o),C=function(){for(var t=new Array(256),r=new Array(256),e=0;e<8;e+=1)t[e]=1<<e;for(e=8;e<256;e+=1)t[e]=t[e-4]^t[e-5]^t[e-6]^t[e-8];for(e=0;e<255;e+=1)r[t[e]]=e;var n={glog:function(t){if(t<1)throw"glog("+t+")";return r[t]},gexp:function(r){for(;r<0;)r+=255;for(;r>=256;)r-=255;return t[r]}};return n}();function k(t,r){if(void 0===t.length)throw t.length+"/"+r;var e=function(){for(var e=0;e<t.length&&0==t[e];)e+=1;for(var n=new Array(t.length-e+r),o=0;o<t.length-e;o+=1)n[o]=t[o+e];return n}(),n={getAt:function(t){return e[t]},getLength:function(){return e.length},multiply:function(t){for(var r=new Array(n.getLength()+t.getLength()-1),e=0;e<n.getLength();e+=1)for(var o=0;o<t.getLength();o+=1)r[e+o]^=C.gexp(C.glog(n.getAt(e))+C.glog(t.getAt(o)));return k(r,0)},mod:function(t){if(n.getLength()-t.getLength()<0)return n;for(var r=C.glog(n.getAt(0))-C.glog(t.getAt(0)),e=new Array(n.getLength()),o=0;o<n.getLength();o+=1)e[o]=n.getAt(o);for(o=0;o<t.getLength();o+=1)e[o]^=C.gexp(C.glog(t.getAt(o))+r);return k(e,0).mod(t)}};return n}var A=function(){var t=[[1,26,19],[1,26,16],[1,26,13],[1,26,9],[1,44,34],[1,44,28],[1,44,22],[1,44,16],[1,70,55],[1,70,44],[2,35,17],[2,35,13],[1,100,80],[2,50,32],[2,50,24],[4,25,9],[1,134,108],[2,67,43],[2,33,15,2,34,16],[2,33,11,2,34,12],[2,86,68],[4,43,27],[4,43,19],[4,43,15],[2,98,78],[4,49,31],[2,32,14,4,33,15],[4,39,13,1,40,14],[2,121,97],[2,60,38,2,61,39],[4,40,18,2,41,19],[4,40,14,2,41,15],[2,146,116],[3,58,36,2,59,37],[4,36,16,4,37,17],[4,36,12,4,37,13],[2,86,68,2,87,69],[4,69,43,1,70,44],[6,43,19,2,44,20],[6,43,15,2,44,16],[4,101,81],[1,80,50,4,81,51],[4,50,22,4,51,23],[3,36,12,8,37,13],[2,116,92,2,117,93],[6,58,36,2,59,37],[4,46,20,6,47,21],[7,42,14,4,43,15],[4,133,107],[8,59,37,1,60,38],[8,44,20,4,45,21],[12,33,11,4,34,12],[3,145,115,1,146,116],[4,64,40,5,65,41],[11,36,16,5,37,17],[11,36,12,5,37,13],[5,109,87,1,110,88],[5,65,41,5,66,42],[5,54,24,7,55,25],[11,36,12,7,37,13],[5,122,98,1,123,99],[7,73,45,3,74,46],[15,43,19,2,44,20],[3,45,15,13,46,16],[1,135,107,5,136,108],[10,74,46,1,75,47],[1,50,22,15,51,23],[2,42,14,17,43,15],[5,150,120,1,151,121],[9,69,43,4,70,44],[17,50,22,1,51,23],[2,42,14,19,43,15],[3,141,113,4,142,114],[3,70,44,11,71,45],[17,47,21,4,48,22],[9,39,13,16,40,14],[3,135,107,5,136,108],[3,67,41,13,68,42],[15,54,24,5,55,25],[15,43,15,10,44,16],[4,144,116,4,145,117],[17,68,42],[17,50,22,6,51,23],[19,46,16,6,47,17],[2,139,111,7,140,112],[17,74,46],[7,54,24,16,55,25],[34,37,13],[4,151,121,5,152,122],[4,75,47,14,76,48],[11,54,24,14,55,25],[16,45,15,14,46,16],[6,147,117,4,148,118],[6,73,45,14,74,46],[11,54,24,16,55,25],[30,46,16,2,47,17],[8,132,106,4,133,107],[8,75,47,13,76,48],[7,54,24,22,55,25],[22,45,15,13,46,16],[10,142,114,2,143,115],[19,74,46,4,75,47],[28,50,22,6,51,23],[33,46,16,4,47,17],[8,152,122,4,153,123],[22,73,45,3,74,46],[8,53,23,26,54,24],[12,45,15,28,46,16],[3,147,117,10,148,118],[3,73,45,23,74,46],[4,54,24,31,55,25],[11,45,15,31,46,16],[7,146,116,7,147,117],[21,73,45,7,74,46],[1,53,23,37,54,24],[19,45,15,26,46,16],[5,145,115,10,146,116],[19,75,47,10,76,48],[15,54,24,25,55,25],[23,45,15,25,46,16],[13,145,115,3,146,116],[2,74,46,29,75,47],[42,54,24,1,55,25],[23,45,15,28,46,16],[17,145,115],[10,74,46,23,75,47],[10,54,24,35,55,25],[19,45,15,35,46,16],[17,145,115,1,146,116],[14,74,46,21,75,47],[29,54,24,19,55,25],[11,45,15,46,46,16],[13,145,115,6,146,116],[14,74,46,23,75,47],[44,54,24,7,55,25],[59,46,16,1,47,17],[12,151,121,7,152,122],[12,75,47,26,76,48],[39,54,24,14,55,25],[22,45,15,41,46,16],[6,151,121,14,152,122],[6,75,47,34,76,48],[46,54,24,10,55,25],[2,45,15,64,46,16],[17,152,122,4,153,123],[29,74,46,14,75,47],[49,54,24,10,55,25],[24,45,15,46,46,16],[4,152,122,18,153,123],[13,74,46,32,75,47],[48,54,24,14,55,25],[42,45,15,32,46,16],[20,147,117,4,148,118],[40,75,47,7,76,48],[43,54,24,22,55,25],[10,45,15,67,46,16],[19,148,118,6,149,119],[18,75,47,31,76,48],[34,54,24,34,55,25],[20,45,15,61,46,16]],r=function(t,r){var e={};return e.totalCount=t,e.dataCount=r,e},e={};return e.getRSBlocks=function(e,n){var o=function(r,e){switch(e){case g.L:return t[4*(r-1)+0];case g.M:return t[4*(r-1)+1];case g.Q:return t[4*(r-1)+2];case g.H:return t[4*(r-1)+3];default:return}}(e,n);if(void 0===o)throw"bad rs block @ typeNumber:"+e+"/errorCorrectionLevel:"+n;for(var i=o.length/3,a=[],u=0;u<i;u+=1)for(var f=o[3*u+0],c=o[3*u+1],l=o[3*u+2],h=0;h<f;h+=1)a.push(r(c,l));return a},e}(),b=function(){var t=[],r=0,e={getBuffer:function(){return t},getAt:function(r){var e=Math.floor(r/8);return 1==(t[e]>>>7-r%8&1)},put:function(t,r){for(var n=0;n<r;n+=1)e.putBit(1==(t>>>r-n-1&1))},getLengthInBits:function(){return r},putBit:function(e){var n=Math.floor(r/8);t.length<=n&&t.push(0),e&&(t[n]|=128>>>r%8),r+=1}};return e},M=function(t){var r=a,e=t,n={getMode:function(){return r},getLength:function(t){return e.length},write:function(t){for(var r=e,n=0;n+2<r.length;)t.put(o(r.substring(n,n+3)),10),n+=3;n<r.length&&(r.length-n==1?t.put(o(r.substring(n,n+1)),4):r.length-n==2&&t.put(o(r.substring(n,n+2)),7))}},o=function(t){for(var r=0,e=0;e<t.length;e+=1)r=10*r+i(t.charAt(e));return r},i=function(t){if("0"<=t&&t<="9")return t.charCodeAt(0)-"0".charCodeAt(0);throw"illegal char :"+t};return n},x=function(t){var r=u,e=t,n={getMode:function(){return r},getLength:function(t){return e.length},write:function(t){for(var r=e,n=0;n+1<r.length;)t.put(45*o(r.charAt(n))+o(r.charAt(n+1)),11),n+=2;n<r.length&&t.put(o(r.charAt(n)),6)}},o=function(t){if("0"<=t&&t<="9")return t.charCodeAt(0)-"0".charCodeAt(0);if("A"<=t&&t<="Z")return t.charCodeAt(0)-"A".charCodeAt(0)+10;switch(t){case" ":return 36;case"$":return 37;case"%":return 38;case"*":return 39;case"+":return 40;case"-":return 41;case".":return 42;case"/":return 43;case":":return 44;default:throw"illegal char :"+t}};return n},m=function(r){var e=f,n=t.stringToBytes(r),o={getMode:function(){return e},getLength:function(t){return n.length},write:function(t){for(var r=0;r<n.length;r+=1)t.put(n[r],8)}};return o},L=function(r){var e=c,n=t.stringToBytesFuncs.SJIS;if(!n)throw"sjis not supported.";!function(){var t=n("友");if(2!=t.length||38726!=(t[0]<<8|t[1]))throw"sjis not supported."}();var o=n(r),i={getMode:function(){return e},getLength:function(t){return~~(o.length/2)},write:function(t){for(var r=o,e=0;e+1<r.length;){var n=(255&r[e])<<8|255&r[e+1];if(33088<=n&&n<=40956)n-=33088;else{if(!(57408<=n&&n<=60351))throw"illegal char at "+(e+1)+"/"+n;n-=49472}n=192*(n>>>8&255)+(255&n),t.put(n,13),e+=2}if(e<r.length)throw"illegal char at "+(e+1)}};return i},D=function(){var t=[],r={writeByte:function(r){t.push(255&r)},writeShort:function(t){r.writeByte(t),r.writeByte(t>>>8)},writeBytes:function(t,e,n){e=e||0,n=n||t.length;for(var o=0;o<n;o+=1)r.writeByte(t[o+e])},writeString:function(t){for(var e=0;e<t.length;e+=1)r.writeByte(t.charCodeAt(e))},toByteArray:function(){return t},toString:function(){var r="";r+="[";for(var e=0;e<t.length;e+=1)e>0&&(r+=","),r+=t[e];return r+="]"}};return r},S=function(t){var r=t,e=0,n=0,o=0,i={read:function(){for(;o<8;){if(e>=r.length){if(0==o)return-1;throw"unexpected end of file./"+o}var t=r.charAt(e);if(e+=1,"="==t)return o=0,-1;t.match(/^\s$/)||(n=n<<6|a(t.charCodeAt(0)),o+=6)}var i=n>>>o-8&255;return o-=8,i}},a=function(t){if(65<=t&&t<=90)return t-65;if(97<=t&&t<=122)return t-97+26;if(48<=t&&t<=57)return t-48+52;if(43==t)return 62;if(47==t)return 63;throw"c:"+t};return i},I=function(t,r,e){for(var n=function(t,r){var e=t,n=r,o=new Array(t*r),i={setPixel:function(t,r,n){o[r*e+t]=n},write:function(t){t.writeString("GIF87a"),t.writeShort(e),t.writeShort(n),t.writeByte(128),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(255),t.writeByte(255),t.writeByte(255),t.writeString(","),t.writeShort(0),t.writeShort(0),t.writeShort(e),t.writeShort(n),t.writeByte(0);var r=a(2);t.writeByte(2);for(var o=0;r.length-o>255;)t.writeByte(255),t.writeBytes(r,o,255),o+=255;t.writeByte(r.length-o),t.writeBytes(r,o,r.length-o),t.writeByte(0),t.writeString(";")}},a=function(t){for(var r=1<<t,e=1+(1<<t),n=t+1,i=u(),a=0;a<r;a+=1)i.add(String.fromCharCode(a));i.add(String.fromCharCode(r)),i.add(String.fromCharCode(e));var f,c,g,l=D(),h=(f=l,c=0,g=0,{write:function(t,r){if(t>>>r!=0)throw"length over";for(;c+r>=8;)f.writeByte(255&(t<<c|g)),r-=8-c,t>>>=8-c,g=0,c=0;g|=t<<c,c+=r},flush:function(){c>0&&f.writeByte(g)}});h.write(r,n);var s=0,v=String.fromCharCode(o[s]);for(s+=1;s<o.length;){var d=String.fromCharCode(o[s]);s+=1,i.contains(v+d)?v+=d:(h.write(i.indexOf(v),n),i.size()<4095&&(i.size()==1<<n&&(n+=1),i.add(v+d)),v=d)}return h.write(i.indexOf(v),n),h.write(e,n),h.flush(),l.toByteArray()},u=function(){var t={},r=0,e={add:function(n){if(e.contains(n))throw"dup key:"+n;t[n]=r,r+=1},size:function(){return r},indexOf:function(r){return t[r]},contains:function(r){return void 0!==t[r]}};return e};return i}(t,r),o=0;o<r;o+=1)for(var i=0;i<t;i+=1)n.setPixel(i,o,e(i,o));var a=D();n.write(a);for(var u=function(){var t=0,r=0,e=0,n="",o={},i=function(t){n+=String.fromCharCode(a(63&t))},a=function(t){if(t<0);else{if(t<26)return 65+t;if(t<52)return t-26+97;if(t<62)return t-52+48;if(62==t)return 43;if(63==t)return 47}throw"n:"+t};return o.writeByte=function(n){for(t=t<<8|255&n,r+=8,e+=1;r>=6;)i(t>>>r-6),r-=6},o.flush=function(){if(r>0&&(i(t<<6-r),t=0,r=0),e%3!=0)for(var o=3-e%3,a=0;a<o;a+=1)n+="="},o.toString=function(){return n},o}(),f=a.toByteArray(),c=0;c<f.length;c+=1)u.writeByte(f[c]);return u.flush(),"data:image/gif;base64,"+u};return t}();qrcode.stringToBytesFuncs["UTF-8"]=function(t){return function(t){for(var r=[],e=0;e<t.length;e++){var n=t.charCodeAt(e);n<128?r.push(n):n<2048?r.push(192|n>>6,128|63&n):n<55296||n>=57344?r.push(224|n>>12,128|n>>6&63,128|63&n):(e++,n=65536+((1023&n)<<10|1023&t.charCodeAt(e)),r.push(240|n>>18,128|n>>12&63,128|n>>6&63,128|63&n))}return r}(t)},function(t){"function"==typeof define&&define.amd?define([],t):"object"==typeof exports&&(module.exports=t())}(function(){return qrcode});
+</script>
 <script type="module">
 /* ===== Configuración de Firebase (proyecto cajonera-7db72) ===== */
 const firebaseConfig = {
@@ -365,6 +393,8 @@ function firebaseApi(appMod, F, A){
     deleteReceipt: id => F.deleteDoc(F.doc(db,"comprobantes",id)),
     watchConfig: cb => F.onSnapshot(F.doc(db,"config","pagos"), s=>cb(s.exists()?s.data():{}), ()=>cb({})),
     saveConfig: data => F.setDoc(F.doc(db,"config","pagos"),data),
+    watchPrivacy: cb => F.onSnapshot(F.doc(db,"config","privacidad"), s=>cb(s.exists()?s.data():{}), ()=>cb({})),
+    savePrivacy: data => F.setDoc(F.doc(db,"config","privacidad"),data),
     watchAds: cb => F.onSnapshot(F.collection(db,"anuncios"), s=>cb(map(s)), ()=>cb([])),
     watchInsts: cb => F.onSnapshot(F.collection(db,"instituciones"), s=>cb(map(s)), ()=>cb([])),
     saveInst: (id,data) => id ? F.setDoc(F.doc(db,"instituciones",id),data) : F.addDoc(F.collection(db,"instituciones"),data),
@@ -376,9 +406,20 @@ function firebaseApi(appMod, F, A){
     watchDoctors: (cb,err) => F.onSnapshot(F.collection(db,"doctores"), s=>cb(map(s)), err),
     watchMine: (uid,cb,err) => F.onSnapshot(F.query(F.collection(db,"solicitudes"),F.where("pacienteUid","==",uid)), s=>cb(map(s)), err),
     watchAll: (cb,err) => F.onSnapshot(F.collection(db,"solicitudes"), s=>cb(map(s)), err),
-    addRequest: data => F.addDoc(F.collection(db,"solicitudes"),{...data,creada:F.serverTimestamp()}),
+    addRequest: (data,contact) => { const ref=F.doc(F.collection(db,"solicitudes")); const b=F.writeBatch(db);
+      b.set(ref,{...data,creada:F.serverTimestamp()}); b.set(F.doc(db,"contactos",ref.id),contact); return b.commit().then(()=>ref.id); },
+    watchContacts: (cb,err) => F.onSnapshot(F.collection(db,"contactos"), s=>cb(map(s)), err),
+    migrateContact: (id,contact) => { const b=F.writeBatch(db); b.set(F.doc(db,"contactos",id),contact);
+      b.update(F.doc(db,"solicitudes",id),{telefono:F.deleteField(),pacienteEmail:F.deleteField()}); return b.commit(); },
     updateRequest: (id,data) => F.updateDoc(F.doc(db,"solicitudes",id),data),
-    saveDoctor: (id,data) => id ? F.setDoc(F.doc(db,"doctores",id),data) : F.addDoc(F.collection(db,"doctores"),data),
+    saveDoctor: (id,data) => id ? F.setDoc(F.doc(db,"doctores",id),data).then(()=>id) : F.addDoc(F.collection(db,"doctores"),data).then(r=>r.id),
+    getDocAccount: async email => { const s=await F.getDoc(F.doc(db,"cuentasDoctor",email)); return s.exists()?{id:s.id,...s.data()}:null; },
+    watchDocAccounts: (cb,err) => F.onSnapshot(F.collection(db,"cuentasDoctor"), s=>cb(map(s)), err),
+    setDocAccount: (email,data) => F.setDoc(F.doc(db,"cuentasDoctor",email),data),
+    deleteDocAccount: email => F.deleteDoc(F.doc(db,"cuentasDoctor",email)),
+    watchBlocks: cb => F.onSnapshot(F.collection(db,"bloqueos"), s=>cb(map(s)), ()=>cb([])),
+    saveBlocks: (doctorId,fechas) => F.setDoc(F.doc(db,"bloqueos",doctorId),{fechas}),
+    watchDoctorReqs: (doctorId,cb,err) => F.onSnapshot(F.query(F.collection(db,"solicitudes"),F.where("doctorId","==",doctorId)), s=>cb(map(s)), err),
     updateDoctor: (id,data) => F.updateDoc(F.doc(db,"doctores",id),data),
     deleteDoctor: id => F.deleteDoc(F.doc(db,"doctores",id))
   };
@@ -417,7 +458,8 @@ function demoReceipt(){
 function demoApi(){
   const USERS={
     paciente:{uid:"demo-paciente",email:"lucia.demo@gmail.com",name:"Lucía Mendoza",verified:true},
-    admin:{uid:"demo-admin",email:ADMINS[0],name:"Mauricio",verified:true}
+    admin:{uid:"demo-admin",email:ADMINS[0],name:"Mauricio",verified:true},
+    doctor:{uid:"demo-doctor",email:"luis.ramirez.demo@gmail.com",name:"Luis Ramírez",verified:true}
   };
   const st={
     doctores:[
@@ -428,6 +470,7 @@ function demoApi(){
       {id:"d5",institucionId:"i2",nombre:"Dra. Rosa Huamán",especialidad:"Pediatría",cmp:"047654",distrito:"San Borja",modalidad:"Presencial",precio:110,horario:"Lun, mié y vie, 15:00–19:00",seguros:"Pacífico, particular",descripcion:"",activo:true}
     ],
     comprobantes:{},
+    cuentasDoctor:[{id:"luis.ramirez.demo@gmail.com",doctorId:"d2",nombre:"Dr. Luis Ramírez"}],
     config:{yapeNumero:"999 111 222",yapeTitular:"Mauricio V.",plazoHoras:3,politica:"Puedes cancelar sin costo hasta 24 horas antes de tu cita y te devolvemos el pago completo.",qr:""},
     solicitudes:[
       {id:"r1",doctorId:"d2",doctorNombre:"Dr. Luis Ramírez",especialidad:"Cardiología",pacienteUid:"demo-paciente",pacienteNombre:"Lucía Mendoza",pacienteEmail:"lucia.demo@gmail.com",telefono:"987654321",fecha:isoOf(addDays(2)),turno:"Tarde",modalidad:"Presencial",estado:"confirmada",hora:"16:30",nota:"Consultorio 204, segundo piso.",monto:180,pago:"por_pagar",pagoReportado:false,pagarAntes:Date.now()+3*3600000,creada:Date.now()-86400000},
@@ -438,9 +481,9 @@ function demoApi(){
       {id:"r3",doctorId:"d4",doctorNombre:"Dr. Jorge Paredes",especialidad:"Medicina general",pacienteUid:"otro2",pacienteNombre:"María Salas",pacienteEmail:"maria.demo@gmail.com",telefono:"956781234",fecha:isoOf(addDays(3)),turno:"Mañana",modalidad:"Presencial",estado:"pendiente",nota:"",creada:Date.now()-7200000}
     ]
   };
-  let cur=null, authCb=null, LD=[], LS=[], LC=[], LA=[], LI=[];
+  let cur=null, authCb=null, LD=[], LS=[], LC=[], LA=[], LI=[], LK=[], LB=[], LP=[];
   const clone=x=>JSON.parse(JSON.stringify(x));
-  const emit=()=>{ LD.forEach(f=>f(clone(st.doctores))); LS.forEach(o=>o.f(clone(o.uid?st.solicitudes.filter(r=>r.pacienteUid===o.uid):st.solicitudes))); };
+  const emit=()=>{ LD.forEach(f=>f(clone(st.doctores))); LS.forEach(o=>o.f(clone(o.doc?st.solicitudes.filter(r=>r.doctorId===o.doc):o.uid?st.solicitudes.filter(r=>r.pacienteUid===o.uid):st.solicitudes))); LK.forEach(f=>f(clone(st.cuentasDoctor))); };
   const later=f=>setTimeout(f,0);
   const api={
     demo:true,
@@ -455,6 +498,8 @@ function demoApi(){
     deleteReceipt:async id=>{ delete st.comprobantes[id]; },
     watchConfig:cb=>{ LC.push(cb); later(()=>cb(clone(st.config))); },
     saveConfig:async d=>{ st.config=clone(d); later(()=>LC.forEach(f=>f(clone(st.config)))); },
+    watchPrivacy:cb=>{ LP.push(cb); later(()=>cb(clone(st.priv||{}))); },
+    savePrivacy:async d=>{ st.priv=clone(d); later(()=>LP.forEach(f=>f(clone(st.priv)))); },
     watchInsts:cb=>{ if(!st.insts) st.insts=[{id:"i1",nombre:"Clínica Santa Lucía",logo:demoLogo("SL","#0b6e6e")},{id:"i2",nombre:"Policlínico Los Andes",logo:""}]; LI.push(cb); later(()=>cb(clone(st.insts))); },
     saveInst:async(id,d)=>{ if(id){ const i=st.insts.findIndex(x=>x.id===id); st.insts[i]={...clone(d),id}; } else st.insts.push({...clone(d),id:"i"+Date.now()}); later(()=>LI.forEach(f=>f(clone(st.insts)))); },
     deleteInst:async id=>{ st.insts=st.insts.filter(x=>x.id!==id); later(()=>LI.forEach(f=>f(clone(st.insts)))); },
@@ -466,9 +511,18 @@ function demoApi(){
     watchDoctors:cb=>{ LD.push(cb); later(()=>cb(clone(st.doctores))); return ()=>{LD=LD.filter(x=>x!==cb);}; },
     watchMine:(uid,cb)=>{ const o={f:cb,uid}; LS.push(o); later(()=>cb(clone(st.solicitudes.filter(r=>r.pacienteUid===uid)))); return ()=>{LS=LS.filter(x=>x!==o);}; },
     watchAll:cb=>{ const o={f:cb,uid:null}; LS.push(o); later(()=>cb(clone(st.solicitudes))); return ()=>{LS=LS.filter(x=>x!==o);}; },
-    addRequest:async d=>{ st.solicitudes.push({...clone(d),id:"r"+Date.now(),creada:Date.now()}); later(emit); },
+    addRequest:async (d,c)=>{ st.solicitudes.push({...clone(d),...clone(c||{}),id:"r"+Date.now(),creada:Date.now()}); later(emit); },
+    watchContacts:cb=>{ later(()=>cb([])); return ()=>{}; },
+    migrateContact:async()=>{},
     updateRequest:async(id,d)=>{ Object.assign(st.solicitudes.find(r=>r.id===id),clone(d)); later(emit); },
-    saveDoctor:async(id,d)=>{ if(id){ const i=st.doctores.findIndex(x=>x.id===id); st.doctores[i]={...clone(d),id}; } else st.doctores.push({...clone(d),id:"d"+Date.now()}); later(emit); },
+    saveDoctor:async(id,d)=>{ if(id){ const i=st.doctores.findIndex(x=>x.id===id); st.doctores[i]={...clone(d),id}; } else { id="d"+Date.now(); st.doctores.push({...clone(d),id}); } later(emit); return id; },
+    getDocAccount:async email=>clone(st.cuentasDoctor.find(a=>a.id===email)||null),
+    watchDocAccounts:cb=>{ LK.push(cb); later(()=>cb(clone(st.cuentasDoctor))); return ()=>{LK=LK.filter(f=>f!==cb);}; },
+    setDocAccount:async(email,data)=>{ st.cuentasDoctor=st.cuentasDoctor.filter(a=>a.id!==email); st.cuentasDoctor.push({id:email,...clone(data)}); later(emit); },
+    deleteDocAccount:async email=>{ st.cuentasDoctor=st.cuentasDoctor.filter(a=>a.id!==email); later(emit); },
+    watchBlocks:cb=>{ if(!st.bloqueos) st.bloqueos=[{id:"d2",fechas:[isoOf(addDays(3))]}]; LB.push(cb); later(()=>cb(clone(st.bloqueos))); },
+    saveBlocks:async(doctorId,fechas)=>{ st.bloqueos=(st.bloqueos||[]).filter(b=>b.id!==doctorId); st.bloqueos.push({id:doctorId,fechas:clone(fechas)}); later(()=>LB.forEach(f=>f(clone(st.bloqueos)))); },
+    watchDoctorReqs:(doctorId,cb)=>{ const o={f:cb,doc:doctorId}; LS.push(o); later(()=>cb(clone(st.solicitudes.filter(r=>r.doctorId===doctorId)))); return ()=>{LS=LS.filter(x=>x!==o);}; },
     updateDoctor:async(id,d)=>{ Object.assign(st.doctores.find(x=>x.id===id),clone(d)); later(emit); },
     deleteDoctor:async id=>{ st.doctores=st.doctores.filter(x=>x.id!==id); later(emit); }
   };
@@ -495,19 +549,39 @@ const instById = id => insts.find(i=>i.id===id);
 const instInitials = n => String(n||"?").replace(/^(cl[ií]nica|policl[ií]nico|centro|hospital)\s+/i,"").split(/\s+/).slice(0,2).map(w=>w[0]||"").join("").toUpperCase();
 const instVisual = i => i.logo ? `<img class="instlogo" src="${i.logo}" alt="">` : `<span class="instlogo instmono" aria-hidden="true">${esc(instInitials(i.nombre))}</span>`;
 let api, doctors=[], mine=[], all=[], user=null, isAdmin=false, unMine=null, unAll=null;
+let isDoctor=false, myDoctorId=null, docReqs=[], unDoc=null, docAccounts=[], unAcc=null;
+/* El celular y el correo del paciente se guardan aparte (colección contactos): solo los ven el paciente y el administrador. */
+let rawAll=[], contacts={}, contactsLoaded=false, unCon=null; const migrating=new Set();
+function mergeAll(){
+  all=rawAll.map(r=>{ const c=contacts[r.id]||{}; return {...r, telefono:r.telefono||c.telefono||"", pacienteEmail:r.pacienteEmail||c.pacienteEmail||""}; });
+  if(contactsLoaded && !api.demo) rawAll.filter(r=>(r.telefono||r.pacienteEmail) && !migrating.has(r.id)).forEach(r=>{
+    migrating.add(r.id);
+    api.migrateContact(r.id,{pacienteUid:r.pacienteUid||"",pacienteEmail:r.pacienteEmail||"",telefono:r.telefono||""}).catch(()=>migrating.delete(r.id));
+  });
+  refresh();
+}
+const dv={tab:"agenda", filtro:"proximas"};
+let blocks={};
+const blockedOn = (doctorId,iso) => (blocks[doctorId]||[]).includes(iso);
+/* Link propio del doctor: ?d=<id> abre la página con ese doctor ya elegido */
+const PRE_DOC = new URLSearchParams(location.search).get("d");
+let preApplied = false;
+try{ if(PRE_DOC) sessionStorage.setItem("am_origen_doc", PRE_DOC); }catch(_){}
+const origenDoc = () => { try{ return sessionStorage.getItem("am_origen_doc"); }catch(_){ return null; } };
+const doctorLink = id => location.origin + location.pathname + "?d=" + encodeURIComponent(id);
 const flow={step:1, esp:null, inst:null, docId:null, fecha:null, turno:null, modalidad:null, lastTel:""};
 const adm={tab:"solicitudes", filtro:"solicitada"};
 const activeDoctors = () => doctors.filter(d=>d.activo!==false);
 const docById = id => doctors.find(d=>d.id===id);
 
 /* ---------- Navegación ---------- */
-function currentTab(){ let t=(location.hash||"#inicio").slice(1); if(t==="admin"&&!isAdmin) t="inicio"; return ["inicio","mis-citas","admin"].includes(t)?t:"inicio"; }
+function currentTab(){ let t=(location.hash||"#inicio").slice(1); if(t==="admin"&&!isAdmin) t="inicio"; if(t==="doctor"&&!isDoctor) t="inicio"; return ["inicio","mis-citas","doctor","admin","privacidad"].includes(t)?t:"inicio"; }
 function route(){
   const tab=currentTab();
-  ["inicio","mis-citas","admin"].forEach(t=>$("view-"+t).hidden = t!==tab);
+  ["inicio","mis-citas","doctor","admin","privacidad"].forEach(t=>$("view-"+t).hidden = t!==tab);
   document.querySelectorAll(".nav a").forEach(a=>{ if(a.dataset.tab===tab) a.setAttribute("aria-current","page"); else a.removeAttribute("aria-current"); });
-  if(tab==="inicio") renderFlow(); else if(tab==="mis-citas") renderMine(); else renderAdmin();
-  if(tab!=="admin" && tab!==lastTracked){ lastTracked=tab; track("page_view",{ page_title:TAB_TITLES[tab], page_location:location.origin+location.pathname+"#"+tab }); }
+  if(tab==="inicio") renderFlow(); else if(tab==="mis-citas") renderMine(); else if(tab==="doctor") renderDoctor(); else if(tab==="privacidad") renderPrivacy(); else renderAdmin();
+  if(tab!=="admin" && tab!=="doctor" && tab!==lastTracked){ lastTracked=tab; track("page_view",{ page_title:TAB_TITLES[tab], page_location:location.origin+location.pathname+"#"+tab }); }
 }
 addEventListener("hashchange", ()=>{ route(); scrollTo(0,0); });
 
@@ -557,9 +631,11 @@ function renderFlow(){
   const d=docById(flow.docId);
   if(!d){ go(1); return; }
   if(flow.step===3){
+    if(flow.fecha && blockedOn(d.id,flow.fecha)) flow.fecha=null;
     const both=(d.modalidad||"")==="Presencial y virtual";
     const days=[...Array(7)].map((_,i)=>{ const dt=addDays(i); const iso=isoOf(dt);
       const top=i===0?"Hoy":i===1?"Mañana":cap(dt.toLocaleDateString("es-PE",{weekday:"short"}).replace(".",""));
+      if(blockedOn(d.id,iso)) return `<button class="chip blocked" disabled aria-label="${esc(top)}: no atiende">${top}<small>No atiende</small></button>`;
       return `<button class="chip" data-act="dia" data-v="${iso}" aria-pressed="${flow.fecha===iso}">${top}<small>${dt.getDate()} ${dt.toLocaleDateString("es-PE",{month:"short"}).replace(".","")}</small></button>`; }).join("");
     const turnos=[["Mañana","8:00–12:00"],["Tarde","12:00–18:00"],["Noche","18:00–21:00"]].map(([t,h])=>`<button class="chip" data-act="turno" data-v="${t}" aria-pressed="${flow.turno===t}">${t}<small>${h}</small></button>`).join("");
     const mods=both?["Presencial","Virtual"].map(m=>`<button class="chip" data-act="mod" data-v="${m}" aria-pressed="${flow.modalidad===m}">${m}</button>`).join(""):"";
@@ -589,7 +665,8 @@ function renderFlow(){
         <label>Tu nombre<input id="fNombre" maxlength="80" autocomplete="name" value="${esc(user?.name||"")}" required></label>
         <label>Celular o WhatsApp<input id="fTel" maxlength="20" inputmode="tel" autocomplete="tel" placeholder="987 654 321" value="${esc(flow.lastTel)}" required></label>
         <p class="notice">No escribas síntomas ni datos médicos. El doctor los verá contigo en la consulta.</p>
-        <label class="check"><input type="checkbox" id="fOk"> Autorizo usar mi nombre, correo y celular solo para coordinar esta cita.</label>
+        <label class="check"><input type="checkbox" id="fOk"> Autorizo de forma expresa el uso de mi nombre, correo, celular y los datos de esta cita solo para coordinarla. El doctor solo verá mi nombre y la fecha.</label>
+        <p class="hint" style="margin:-4px 0 0">Lee la <a href="#privacidad" target="_blank" rel="noopener">política de privacidad</a>.</p>
         <p class="err" id="fErr" role="alert"></p>
         <button class="block" id="fSend" type="submit">${user?"Enviar solicitud":"Continuar y enviar"}</button>
         ${user?`<p class="hint" style="text-align:center">Enviarás como ${esc(user.email)}</p>`:`<p class="hint" style="text-align:center">Te pediremos entrar con Google o con tu correo para que puedas ver el estado de tu cita.</p>`}
@@ -640,8 +717,9 @@ $("view-inicio").addEventListener("submit", async e=>{
     if(!u){ err.textContent="Entra con Google o con tu correo para enviar la solicitud."; btn.disabled=false; return; }
     btn.textContent="Enviando…";
     const mod=flow.modalidad||((d.modalidad||"Presencial")==="Virtual"?"Virtual":"Presencial");
-    await api.addRequest({doctorId:d.id,doctorNombre:d.nombre,especialidad:d.especialidad,pacienteUid:u.uid,pacienteNombre:nombre.slice(0,80),pacienteEmail:u.email,telefono:tel.slice(0,20),fecha:flow.fecha,turno:flow.turno,modalidad:mod,consentimiento:true,estado:"pendiente",nota:""});
-    track("solicitud_enviada",{ especialidad:d.especialidad||"", modalidad:mod });
+    await api.addRequest({doctorId:d.id,doctorNombre:d.nombre,especialidad:d.especialidad,pacienteUid:u.uid,pacienteNombre:nombre.slice(0,80),fecha:flow.fecha,turno:flow.turno,modalidad:mod,consentimiento:true,estado:"pendiente",nota:"",...(origenDoc()===d.id?{origen:"link"}:{})},
+      {pacienteUid:u.uid,pacienteEmail:u.email,telefono:tel.slice(0,20)});
+    track("solicitud_enviada",{ especialidad:d.especialidad||"", modalidad:mod, origen:origenDoc()===d.id?"link_doctor":"app" });
     go(5);
   }catch(ex){
     const c=ex&&ex.code;
@@ -865,6 +943,219 @@ function reqCard(r){
     ${actions}
   </article>`;
 }
+/* ---------- Doctor: su consultorio (solo lectura) ---------- */
+const accOf = doctorId => docAccounts.find(a=>a.doctorId===doctorId);
+const DOC_FILTERS=[
+  ["proximas","Próximas", r=>["solicitada","porpagar","revision","reservada"].includes(statusOf(r)) && String(r.fecha)>=isoOf(new Date())],
+  ["hoy","Hoy", r=>["solicitada","porpagar","revision","reservada"].includes(statusOf(r)) && r.fecha===isoOf(new Date())],
+  ["pasadas","Pasadas", r=>statusOf(r)==="reservada" && String(r.fecha)<isoOf(new Date())],
+  ["canceladas","Canceladas", r=>["rechazada","cancelada","liberada"].includes(statusOf(r))]
+];
+function docCard(r){
+  const when = r.hora ? `${shortDate(r.fecha)} · ${r.hora}` : `${shortDate(r.fecha)} · ${r.turno||""} (por confirmar)`;
+  return `<article class="card s-${statusOf(r)}">
+    <div class="row between"><h3>${esc(r.pacienteNombre)}</h3>${statusPill(r)}</div>
+    <dl class="meta" style="margin:0">
+      <dt>Cita</dt><dd><b>${esc(when)}</b> · ${esc(r.modalidad||"")}</dd>
+      ${r.monto!=null&&r.estado==="confirmada"?`<dt>Pago</dt><dd>${money(r.monto)} · ${r.pago==="pagado"?"pagado":"pendiente"}</dd>`:""}
+      ${r.nota?`<dt>Nota</dt><dd>${esc(r.nota)}</dd>`:""}
+    </dl>
+    ${statusOf(r)==="solicitada"?`<p class="hint" style="margin:0">Agenda Médica está confirmando la hora con el paciente.</p>`:""}
+  </article>`;
+}
+function todaySummary(){
+  const act=r=>["solicitada","porpagar","revision","reservada"].includes(statusOf(r));
+  const hoy=isoOf(new Date()), man=isoOf(addDays(1)), fin=isoOf(addDays(6));
+  const lh=docReqs.filter(r=>r.fecha===hoy && act(r)).sort((a,b)=>String(a.hora||"99").localeCompare(String(b.hora||"99")));
+  const nm=docReqs.filter(r=>r.fecha===man && act(r)).length, ns=docReqs.filter(r=>r.fecha>=hoy && r.fecha<=fin && act(r)).length;
+  const conHora=lh.find(r=>r.hora), res=lh.filter(r=>statusOf(r)==="reservada").length;
+  const blk=blockedOn(myDoctorId,hoy);
+  const main = blk ? "Hoy marcaste el día sin atención." : lh.length ? `Hoy tienes ${plural(lh.length,"cita","citas")}${res!==lh.length?` (${res} ${res===1?"reservada":"reservadas"})`:""}.${conHora?` La primera es a las ${esc(conHora.hora)}${lh.length>1?` con ${esc(conHora.pacienteNombre)}`:""}.`:""}` : "Hoy no tienes citas.";
+  return `<div class="today"><b>${main}</b><span class="hint">Mañana: ${plural(nm,"cita","citas")} · Próximos 7 días: ${plural(ns,"cita","citas")}</span></div>`;
+}
+function drawQr(url){
+  const img=$("qrImg"), dl=$("qrDl"); if(!img || typeof qrcode!=="function") return;
+  try{
+    const q=qrcode(0,"M"); q.addData(url); q.make();
+    const n=q.getModuleCount(), cell=10, m=4, size=(n+m*2)*cell, cv=document.createElement("canvas"); cv.width=cv.height=size;
+    const c=cv.getContext("2d"); c.fillStyle="#fff"; c.fillRect(0,0,size,size); c.fillStyle="#0e1f1f";
+    for(let r=0;r<n;r++) for(let k=0;k<n;k++) if(q.isDark(r,k)) c.fillRect((k+m)*cell,(r+m)*cell,cell,cell);
+    const data=cv.toDataURL("image/png"); img.src=data; dl.href=data;
+  }catch(_){ img.alt="No se pudo generar el QR"; }
+}
+function renderDoctor(){
+  const v=$("view-doctor"); if(!isDoctor){ v.innerHTML=""; return; }
+  const d=docById(myDoctorId);
+  const head=`<div class="row between"><div><h2>Mi consultorio</h2><p class="sub" style="margin:0">${esc(d?d.nombre:"")}${d?" · "+esc(d.especialidad):""}</p></div>
+    <div class="tabs2" role="group" aria-label="Sección">
+      <button data-act="dtab" data-v="agenda" aria-pressed="${dv.tab==="agenda"}">Agenda</button>
+      <button data-act="dtab" data-v="pacientes" aria-pressed="${dv.tab==="pacientes"}">Pacientes</button>
+      <button data-act="dtab" data-v="ingresos" aria-pressed="${dv.tab==="ingresos"}">Ingresos</button>
+      <button data-act="dtab" data-v="dias" aria-pressed="${dv.tab==="dias"}">Días sin atención</button>
+      <button data-act="dtab" data-v="link" aria-pressed="${dv.tab==="link"}">Mi link y QR</button></div></div>
+    ${todaySummary()}
+    <p class="hint">Esta vista es solo de consulta. Para cambiar una cita, tu horario o tu precio, o para contactar a un paciente, escribe a Agenda Médica.</p>`;
+  if(dv.tab==="agenda"){
+    const f=DOC_FILTERS.find(x=>x[0]===dv.filtro)||DOC_FILTERS[0];
+    const list=docReqs.filter(f[2]).sort((a,b)=> f[0]==="pasadas"||f[0]==="canceladas" ? String(b.fecha).localeCompare(String(a.fecha)) : String(a.fecha).localeCompare(String(b.fecha))||String(a.hora||"").localeCompare(String(b.hora||"")));
+    v.innerHTML=head+`<div class="chips">${DOC_FILTERS.map(([k,l,fn])=>`<button class="chip small" data-act="dfiltro" data-v="${k}" aria-pressed="${f[0]===k}"><span>${l}</span><small>${docReqs.filter(fn).length}</small></button>`).join("")}</div>
+      ${list.length?`<div class="grid">${list.map(docCard).join("")}</div>`:`<div class="empty">No hay citas aquí.</div>`}`;
+  } else if(dv.tab==="pacientes"){
+    const by={};
+    docReqs.filter(r=>!["rechazada","cancelada","liberada"].includes(statusOf(r))).forEach(r=>{
+      const k=r.pacienteUid||r.pacienteNombre; const p=by[k]=by[k]||{nombre:r.pacienteNombre,citas:0,ultima:"",proxima:""};
+      p.citas++; const hoy=isoOf(new Date());
+      if(String(r.fecha)<hoy){ if(r.fecha>p.ultima) p.ultima=r.fecha; } else if(!p.proxima||r.fecha<p.proxima) p.proxima=r.fecha;
+    });
+    const rows=Object.values(by).sort((a,b)=>String(a.nombre).localeCompare(String(b.nombre)));
+    v.innerHTML=head+`<div class="card"><h3>${plural(rows.length,"paciente","pacientes")}</h3>
+      ${rows.length?`<div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Paciente</th><th class="num">Citas</th><th>Última</th><th>Próxima</th></tr></thead>
+      <tbody>${rows.map(p=>`<tr><td><b>${esc(p.nombre)}</b></td><td class="num">${p.citas}</td><td>${p.ultima?esc(shortDate(p.ultima)):"—"}</td><td>${p.proxima?esc(shortDate(p.proxima)):"—"}</td></tr>`).join("")}</tbody></table></div>`
+      :`<p class="hint">Aún no tienes pacientes por la app.</p>`}
+      <p class="hint" style="margin-top:10px">Estos datos son de tus pacientes y están protegidos por la Ley 29733: úsalos solo para su atención.</p></div>`;
+  } else if(dv.tab==="dias"){
+    const mine=new Set(blocks[myDoctorId]||[]);
+    const start=addDays(0), lead=(start.getDay()+6)%7;
+    const cells=[...Array(lead)].map(()=>`<span></span>`).concat([...Array(42)].map((_,i)=>{ const dt=addDays(i), iso=isoOf(dt), on=mine.has(iso);
+      const n=docReqs.filter(r=>r.fecha===iso && ["solicitada","porpagar","revision","reservada"].includes(statusOf(r))).length;
+      return `<button type="button" data-act="dblock" data-v="${iso}" aria-pressed="${on}" aria-label="${esc(longDate(iso))}${on?", sin atención":""}${n?`, ${n} cita(s)`:""}">${dt.getDate()}<small>${on?"Bloqueado":n?plural(n,"cita","citas"):dt.toLocaleDateString("es-PE",{month:"short"}).replace(".","")}</small></button>`; }));
+    v.innerHTML=head+`<div class="card"><h3>Días sin atención</h3>
+      <p class="hint">Toca un día para bloquearlo (vacaciones, congresos, días libres). Los pacientes no podrán pedir cita ese día. Toca otra vez para desbloquearlo. Las citas que ya existan ese día no se cancelan: avisa a Agenda Médica.</p>
+      <div class="cal">${["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"].map(w=>`<span class="wd">${w}</span>`).join("")}${cells.join("")}</div>
+      <p class="ok" id="blkMsg" role="status"></p></div>`;
+  } else if(dv.tab==="link"){
+    const url=doctorLink(myDoctorId), n=docReqs.filter(r=>r.origen==="link").length;
+    const share=`Pide tu cita conmigo en Agenda Médica: ${url}`;
+    v.innerHTML=head+`<div class="card"><h3>Tu link para pacientes</h3>
+      <p class="hint">Quien abra este link llega directo a pedir cita contigo, sin buscarte en la lista. Compártelo en tu WhatsApp, tus redes o tu firma, e imprime el QR para tu consultorio o tus recetas.</p>
+      <label>Tu link<input id="myLink" readonly value="${esc(url)}"></label>
+      <div class="row"><button type="button" data-act="copylink">Copiar link</button><a class="btn ghost" href="https://wa.me/?text=${encodeURIComponent(share)}" target="_blank" rel="noopener">Compartir por WhatsApp</a></div>
+      <p class="ok" id="linkMsg" role="status"></p>
+      <div class="qrbox"><img id="qrImg" alt="Código QR de tu link para pedir cita"><div style="display:flex;flex-direction:column;gap:8px">
+        <a class="btn" id="qrDl" download="QR-Agenda-Medica.png">Descargar QR (imagen)</a>
+        <span class="hint">Para imprimir, usa al menos 3 × 3 cm.</span></div></div></div>
+      <div class="stats"><div class="stat"><span class="hint">Citas que llegaron por tu link o QR</span><b>${n}</b><span class="hint">de ${plural(docReqs.length,"cita en total","citas en total")}</span></div></div>`;
+    drawQr(url);
+  } else {
+    const paid=docReqs.filter(r=>r.estado==="confirmada"&&r.pago==="pagado");
+    const owed=docReqs.filter(r=>r.estado==="confirmada"&&r.pago==="por_pagar");
+    const sum=l=>l.reduce((s,r)=>s+Number(r.monto||0),0);
+    const byMonth={}; paid.forEach(r=>{ const k=String(r.fecha).slice(0,7); byMonth[k]=byMonth[k]||{n:0,t:0}; byMonth[k].n++; byMonth[k].t+=Number(r.monto||0); });
+    const months=Object.entries(byMonth).sort((a,b)=>b[0].localeCompare(a[0]));
+    const mLabel=k=>{ const [y,m]=k.split("-").map(Number); return cap(new Date(y,m-1,1).toLocaleDateString("es-PE",{month:"long",year:"numeric"})); };
+    v.innerHTML=head+`<div class="stats">
+        <div class="stat"><span class="hint">Cobrado a tus pacientes</span><b>${money(sum(paid))}</b><span class="hint">${plural(paid.length,"cita pagada","citas pagadas")}</span></div>
+        <div class="stat"><span class="hint">Por cobrar</span><b>${money(sum(owed))}</b><span class="hint">${plural(owed.length,"cita confirmada sin pago","citas confirmadas sin pago")}</span></div>
+      </div>
+      <div class="card"><h3>Por mes</h3>
+        ${months.length?`<table class="tbl"><thead><tr><th>Mes</th><th class="num">Citas pagadas</th><th class="num">Total</th></tr></thead>
+        <tbody>${months.map(([k,o])=>`<tr><td>${esc(mLabel(k))}</td><td class="num">${o.n}</td><td class="num">${money(o.t)}</td></tr>`).join("")}</tbody></table>`:`<p class="hint">Aún no hay citas pagadas.</p>`}
+        <p class="hint" style="margin-top:10px">Es lo que pagaron tus pacientes por la app. Agenda Médica te transfiere tu parte según lo acordado.</p></div>`;
+  }
+}
+$("view-doctor").addEventListener("click", async e=>{
+  const b=e.target.closest("[data-act]"); if(!b) return;
+  if(b.dataset.act==="dtab"){ dv.tab=b.dataset.v; renderDoctor(); }
+  else if(b.dataset.act==="dfiltro"){ dv.filtro=b.dataset.v; renderDoctor(); }
+  else if(b.dataset.act==="dblock"){
+    const iso=b.dataset.v, hoy=isoOf(new Date());
+    const cur=new Set((blocks[myDoctorId]||[]).filter(x=>x>=hoy));
+    if(cur.has(iso)) cur.delete(iso); else cur.add(iso);
+    const fechas=[...cur].sort().slice(0,120);
+    b.disabled=true;
+    try{ await api.saveBlocks(myDoctorId,fechas); blocks[myDoctorId]=fechas; renderDoctor(); const m=$("blkMsg"); if(m) m.textContent="Guardado."; }
+    catch(ex){ b.disabled=false; const m=$("blkMsg"); if(m){ m.className="err"; m.textContent="No se pudo guardar ("+(ex.code||"error")+")."; } }
+  }
+  else if(b.dataset.act==="copylink"){
+    const t=$("myLink"); try{ await navigator.clipboard.writeText(t.value); $("linkMsg").textContent="Link copiado."; }catch(_){ t.select(); $("linkMsg").textContent="Selecciona el link y cópialo."; }
+  }
+});
+
+/* ---------- Política de privacidad (Ley 29733 y su reglamento, D.S. 016-2024-JUS) ---------- */
+let privCfg={}, privMsg="";
+const PRIV_UPDATED="23 de noviembre de 2026";
+const PRIV = () => ({ titular: privCfg.titular||"Agenda Médica", documento: privCfg.documento||"", domicilio: privCfg.domicilio||"", correo: privCfg.correo||"" });
+function renderPrivacy(){
+  const P=PRIV(), mail=P.correo?`<a href="mailto:${esc(P.correo)}?subject=${encodeURIComponent("Protección de datos personales")}">${esc(P.correo)}</a>`:"nuestro correo de atención";
+  $("view-privacidad").innerHTML=`<article class="policy">
+    <h2>Política de privacidad</h2>
+    <p class="sub">Última actualización: ${PRIV_UPDATED}</p>
+    <p style="margin-top:12px">En Agenda Médica cuidamos tus datos personales. Aquí te explicamos, en palabras simples, qué datos usamos, para qué, quién los ve y cómo puedes ejercer tus derechos, según la Ley N.°&nbsp;29733, Ley de Protección de Datos Personales, y su reglamento (D.S. N.°&nbsp;016-2024-JUS).</p>
+
+    <h3>1. Quién es responsable de tus datos</h3>
+    <div class="card">
+      <p><b>${esc(P.titular)}</b>${P.documento?` · ${esc(P.documento)}`:""}</p>
+      ${P.domicilio?`<p>Domicilio: ${esc(P.domicilio)}</p>`:""}
+      ${P.correo?`<p>Correo para temas de privacidad: ${mail}</p>`:""}
+    </div>
+
+    <h3>2. Qué datos usamos</h3>
+    <ul>
+      <li><b>Tu cuenta:</b> nombre y correo. Si entras con Google, recibimos solo tu nombre y correo; nunca tu contraseña.</li>
+      <li><b>Tu contacto:</b> número de celular.</li>
+      <li><b>Tu cita:</b> especialidad, doctor, fecha, turno, hora, modalidad (presencial o virtual) y su estado.</li>
+      <li><b>Tu pago:</b> monto, número de operación y la imagen del comprobante de Yape que subes.</li>
+      <li><b>Uso de la página:</b> estadísticas anónimas (qué pantallas se abren, tipo de dispositivo, de dónde llegan las visitas). No incluyen tu nombre, correo ni celular.</li>
+    </ul>
+    <p><b>Datos sensibles.</b> La especialidad y el doctor que eliges pueden decir algo sobre tu salud, y la ley los trata como datos sensibles. Por eso te pedimos tu consentimiento expreso antes de enviar cada solicitud, y los usamos solo para lo que se indica aquí.</p>
+
+    <h3>3. Para qué los usamos</h3>
+    <ul>
+      <li>Registrar tu solicitud y coordinar la fecha y hora con el doctor.</li>
+      <li>Verificar tu pago y confirmar tu cita.</li>
+      <li>Comunicarnos contigo sobre tu cita por WhatsApp, llamada o correo.</li>
+      <li>Atender cancelaciones, devoluciones y reclamos.</li>
+      <li>Mejorar la página con estadísticas anónimas.</li>
+    </ul>
+    <p>No vendemos tus datos ni los usamos para publicidad de terceros. Si algún día quisiéramos usarlos para otra finalidad, te pediríamos un nuevo consentimiento.</p>
+
+    <h3>4. Quién ve tus datos</h3>
+    <ul>
+      <li><b>Tú:</b> todo lo de tus citas, desde "Mis citas".</li>
+      <li><b>El doctor que te atiende:</b> solo tu nombre, la fecha, la hora, la modalidad, el estado de la cita y si está pagada. No ve tu celular, tu correo ni tu comprobante.</li>
+      <li><b>El equipo de Agenda Médica:</b> los datos necesarios para coordinar tu cita y verificar tu pago.</li>
+      <li><b>Proveedores tecnológicos</b> que guardan o procesan datos por encargo nuestro y con medidas de seguridad: Google Firebase (base de datos e inicio de sesión), GitHub Pages (alojamiento de la página) y Google Analytics (estadísticas anónimas).</li>
+    </ul>
+    <p><b>Datos fuera del Perú.</b> Estos proveedores tienen servidores fuera del país, por lo que tus datos se almacenan en el extranjero (flujo transfronterizo). Al aceptar esta política autorizas esa transferencia, que se hace solo para prestar el servicio.</p>
+
+    <h3>5. Qué pasa si no nos das tus datos</h3>
+    <p>Sin tu nombre, correo y celular no podemos registrar ni coordinar tu cita. Las estadísticas anónimas no son necesarias para usar la página: si tu navegador las bloquea, todo funciona igual.</p>
+
+    <h3>6. Cuánto tiempo los guardamos</h3>
+    <ul>
+      <li>Datos de tu cuenta y tus citas: mientras tengas cuenta, o hasta que pidas eliminarlos.</li>
+      <li>Datos de pagos: el tiempo que exijan las normas contables y tributarias.</li>
+      <li>Estadísticas anónimas: según el plazo configurado en Google Analytics.</li>
+    </ul>
+
+    <h3>7. Tus derechos</h3>
+    <p>Puedes, en cualquier momento y sin costo:</p>
+    <ul>
+      <li><b>Acceder</b> a tus datos y saber cómo los usamos.</li>
+      <li><b>Rectificar</b> los que estén incorrectos o desactualizados.</li>
+      <li><b>Cancelar o suprimir</b> tus datos y tu cuenta.</li>
+      <li><b>Oponerte</b> a un uso determinado.</li>
+      <li><b>Revocar</b> tu consentimiento, sin que esto afecte lo hecho antes.</li>
+    </ul>
+    <p>Escríbenos a ${mail} desde el correo de tu cuenta, con el asunto "Protección de datos personales" y lo que necesitas. Te responderemos dentro de los plazos de ley. Si no quedas conforme, puedes presentar una reclamación ante la Autoridad Nacional de Protección de Datos Personales del Ministerio de Justicia y Derechos Humanos.</p>
+
+    <h3>8. Cómo protegemos tus datos</h3>
+    <ul>
+      <li>La conexión con la página está cifrada (HTTPS).</li>
+      <li>Para ver o pedir citas necesitas iniciar sesión con tu cuenta.</li>
+      <li>Reglas de acceso en la base de datos: cada paciente ve solo sus citas, cada doctor solo las suyas y sin datos de contacto, y los comprobantes solo los ve el paciente y el equipo de Agenda Médica.</li>
+    </ul>
+
+    <h3>9. Menores de edad</h3>
+    <p>Si la cita es para un menor de edad, la solicitud debe hacerla su padre, madre o tutor, con su propia cuenta.</p>
+
+    <h3>10. Cambios a esta política</h3>
+    <p>Si cambiamos esta política, actualizaremos la fecha de arriba y, si el cambio es importante, te avisaremos dentro de la página.</p>
+
+    <p style="margin-top:18px"><a href="#inicio">← Volver a Agenda Médica</a></p>
+  </article>`;
+}
+
 function renderAdmin(){
   const v=$("view-admin"); if(!isAdmin){ v.innerHTML=""; return; }
   const nNew=all.filter(FILTERS[0][2]).length, nVer=toVerify();
@@ -913,6 +1204,7 @@ function renderAdmin(){
           <label>N.º de colegiatura (CMP)<input id="dCmp" maxlength="15" placeholder="012345"></label>
           <label>Institución donde trabaja<select id="dInst"><option value="">Ninguna / independiente</option>${[...insts].sort((a,b)=>a.nombre.localeCompare(b.nombre)).map(i=>`<option value="${i.id}">${esc(i.nombre)}</option>`).join("")}</select></label>
           <label class="wide">Descripción breve<textarea id="dDesc" rows="2" maxlength="300"></textarea></label>
+          <label class="wide">Correo para su cuenta (opcional)<input id="dEmail" type="email" maxlength="100" placeholder="doctora@gmail.com" autocomplete="off"><span class="hint">Con este correo el doctor entra (con Google o con correo y contraseña) y ve su consultorio: sus citas, el nombre de sus pacientes y sus ingresos. No ve celulares ni correos, y no puede cambiar nada.</span></label>
           <label class="check wide"><input type="checkbox" id="dActivo" checked> Visible para los pacientes</label>
         </div>
         <p class="err" id="dErr" role="alert"></p>
@@ -920,6 +1212,7 @@ function renderAdmin(){
       </form>
       ${list.length?`<div class="grid">${list.map(d=>`<article class="card ${d.activo===false?"off":""}">
         <div class="row between"><h3>${esc(d.nombre)}</h3><span class="tag">${d.activo===false?"Oculto":"Visible"}</span></div>
+        <p class="hint" style="margin:0">${accOf(d.id)?`Cuenta: ${esc(accOf(d.id).id)}`:"Sin cuenta de doctor"}</p>
         <p class="sub">${esc(d.especialidad)}${d.distrito?" · "+esc(d.distrito):""}${d.precio!=null&&d.precio!==""?" · S/ "+esc(d.precio):""}${d.institucionId&&instById(d.institucionId)?" · "+esc(instById(d.institucionId).nombre):""}</p>
         <div class="row"><button class="ghost small" data-act="dedit" data-v="${d.id}">Editar</button><button class="ghost small" data-act="dtoggle" data-v="${d.id}">${d.activo===false?"Mostrar":"Ocultar"}</button><button class="danger small" data-act="ddel" data-v="${d.id}">Eliminar</button></div>
       </article>`).join("")}</div>`:`<div class="empty">Agrega tu primer doctor con el formulario.</div>`}`;
@@ -955,6 +1248,18 @@ function renderAdmin(){
         </div>
         <p class="err" id="pErr" role="alert"></p><p class="ok" id="pOk" role="status">${esc(payMsg)}</p>
         <div><button type="submit" id="pSave">Guardar datos de pago</button></div>
+      </form>
+      <form id="privForm" class="card" novalidate>
+        <h3>Datos del responsable (política de privacidad)</h3>
+        <p class="hint">La ley pide que la política diga quién es responsable de los datos y cómo contactarlo. Esto se muestra en la página pública "Política de privacidad".</p>
+        <div class="form-grid">
+          <label>Nombre o razón social<input id="vTit" maxlength="120" placeholder="Agenda Médica" value="${esc(privCfg.titular||"")}"></label>
+          <label>DNI o RUC<input id="vDoc" maxlength="20" value="${esc(PRIV().documento)}"></label>
+          <label class="wide">Domicilio<input id="vDom" maxlength="160" placeholder="Av. …, distrito, Lima" value="${esc(PRIV().domicilio)}"></label>
+          <label class="wide">Correo para temas de privacidad<input id="vMail" type="email" maxlength="100" placeholder="correo@rotonda…" value="${esc(PRIV().correo)}"></label>
+        </div>
+        <p class="err" id="vErr" role="alert"></p><p class="ok" id="vOk" role="status">${esc(privMsg)}</p>
+        <div class="row"><button type="submit" id="vSave">Guardar</button><a class="btn ghost" href="#privacidad" target="_blank" rel="noopener">Ver la política</a></div>
       </form>`;
   }
 }
@@ -1164,6 +1469,7 @@ $("view-admin").addEventListener("click", async e=>{
     const d=docById(id); if(!d) return;
     $("dId").value=d.id; for(const [k,f] of Object.entries(DF)) $(f).value=d[k]??"";
     $("dActivo").checked=d.activo!==false; $("dfTitle").textContent="Editar doctor"; $("dCancel").hidden=false;
+    $("dEmail").value=accOf(d.id)?accOf(d.id).id:"";
     $("docForm").scrollIntoView({behavior:"smooth",block:"start"}); $("dNombre").focus();
   }
   else if(a==="dcancel"){ renderAdmin(); }
@@ -1176,6 +1482,7 @@ $("view-admin").addEventListener("click", async e=>{
   else if(a==="dtoggle"){ const d=docById(id); await api.updateDoctor(id,{activo:d.activo===false}); }
   else if(a==="ddel"){
     if(b.dataset.sure!=="1"){ b.dataset.sure="1"; b.textContent="¿Seguro? Pulsa otra vez"; return; }
+    const acc=accOf(id); if(acc){ try{ await api.deleteDocAccount(acc.id); }catch(_){} }
     await api.deleteDoctor(id);
   }
 });
@@ -1192,6 +1499,15 @@ $("view-admin").addEventListener("submit", async e=>{
     catch(ex){ $("iErr").textContent=ex.msg||"No se pudo guardar ("+(ex.code||"error")+")."; const s=$("iSave"); if(s) s.disabled=false; }
     return;
   }
+  if(e.target.id==="privForm"){
+    const data={titular:$("vTit").value.trim()||"Agenda Médica",documento:$("vDoc").value.trim(),domicilio:$("vDom").value.trim(),correo:$("vMail").value.trim().toLowerCase()};
+    if(!data.titular||!data.correo){ $("vErr").textContent="El nombre y el correo son obligatorios."; return; }
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(data.correo)){ $("vErr").textContent="Revisa el correo."; $("vMail").focus(); return; }
+    $("vSave").disabled=true;
+    try{ await api.savePrivacy(data); privMsg="Guardado. La política ya muestra estos datos."; const o=$("vOk"); if(o) o.textContent=privMsg; }
+    catch(ex){ $("vErr").textContent="No se pudo guardar ("+(ex.code||"error")+")."; }
+    $("vSave").disabled=false; return;
+  }
   if(e.target.id==="payForm"){
     const num=$("pNum").value.trim();
     if(num && digits(num).length<9){ $("pErr").textContent="Revisa el número de Yape (9 dígitos)."; $("pNum").focus(); return; }
@@ -1207,8 +1523,18 @@ $("view-admin").addEventListener("submit", async e=>{
   if(!data.nombre||!data.especialidad){ $("dErr").textContent="Nombre y especialidad son obligatorios."; return; }
   data.precio = data.precio==="" ? null : Number(data.precio);
   data.activo = $("dActivo").checked;
+  const email=$("dEmail").value.trim().toLowerCase(), editId=$("dId").value||null;
+  if(email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ $("dErr").textContent="Revisa el correo de la cuenta del doctor."; $("dEmail").focus(); return; }
+  const taken=docAccounts.find(a=>a.id===email && a.doctorId!==editId);
+  if(email && taken){ $("dErr").textContent="Ese correo ya es la cuenta de otro doctor."; $("dEmail").focus(); return; }
+  if(email && ADMINS.includes(email)){ $("dErr").textContent="Ese correo es de un administrador. Usa otro correo para el doctor."; $("dEmail").focus(); return; }
   $("dSave").disabled=true;
-  try{ await api.saveDoctor($("dId").value||null,data); }
+  try{
+    const id=await api.saveDoctor(editId,data);
+    const prev=accOf(id);
+    if(prev && prev.id!==email) await api.deleteDocAccount(prev.id);
+    if(email && (!prev || prev.id!==email || prev.nombre!==data.nombre)) await api.setDocAccount(email,{doctorId:id,nombre:data.nombre});
+  }
   catch(ex){ $("dErr").textContent="No se pudo guardar ("+(ex.code||"error")+")."; $("dSave").disabled=false; }
 });
 
@@ -1272,16 +1598,19 @@ function renderHeader(){
   $("who").textContent = user ? (user.name||user.email) : "";
   $("loginBtn").hidden = !!user; $("logoutBtn").hidden = !user || api.demo;
   $("adminTab").hidden = !isAdmin;
+  $("docTab").hidden = !isDoctor;
   const p=all.filter(r=>r.estado==="pendiente").length+all.filter(r=>r.estado==="confirmada"&&r.pago==="por_pagar"&&r.pagoReportado).length;
   $("pendBadge").hidden = !(isAdmin && p); $("pendBadge").textContent = p;
   if(api.demo){
-    const role = !user ? "none" : isAdmin ? "admin" : "paciente";
+    const role = !user ? "none" : isAdmin ? "admin" : isDoctor ? "doctor" : "paciente";
     document.querySelectorAll("#demoBar [data-role]").forEach(b=>b.setAttribute("aria-pressed", b.dataset.role===role));
   }
 }
 function refresh(){
   renderHeader(); const t=currentTab();
   if(t==="inicio"){ if(flow.step<=2||flow.step===5) renderFlow(); return; }
+  if(t==="doctor"){ renderDoctor(); return; }
+  if(t==="privacidad"){ renderPrivacy(); return; }
   const ae=document.activeElement, view=$("view-"+t);
   if(view && view.contains(ae) && /INPUT|TEXTAREA|SELECT/.test(ae.tagName)){ ae.addEventListener("blur",()=>setTimeout(refresh,400),{once:true}); return; }
   if(view && [...view.querySelectorAll('input[type="file"]')].some(i=>i.files&&i.files.length)){ clearTimeout(refresh._t); refresh._t=setTimeout(refresh,3000); return; }
@@ -1303,20 +1632,38 @@ function trackReserved(list){
   if(!api){ $("view-inicio").innerHTML=`<div class="empty">No se pudo conectar con el servidor. Revisa tu conexión a internet y recarga la página.<br><br><button onclick="location.reload()">Recargar</button></div>`; return; }
   if(api.demo){
     $("demoBar").hidden=false;
-    $("demoBar").addEventListener("click",e=>{ const b=e.target.closest("[data-role]"); if(!b) return; api.setRole(b.dataset.role); if(b.dataset.role==="admin") location.hash="#admin"; else if(location.hash==="#admin") location.hash="#inicio"; });
+    $("demoBar").addEventListener("click",e=>{ const b=e.target.closest("[data-role]"); if(!b) return; api.setRole(b.dataset.role); if(b.dataset.role==="admin") location.hash="#admin"; else if(b.dataset.role==="doctor") location.hash="#doctor"; else if(location.hash==="#admin"||location.hash==="#doctor") location.hash="#inicio"; });
   }
   $("loginBtn").addEventListener("click",()=>openAuth());
   $("logoutBtn").addEventListener("click",()=>api.logout());
   api.watchConfig(c=>{ config=c||{}; refresh(); });
+  api.watchPrivacy(c=>{ privCfg=c||{}; refresh(); });
   api.watchAds(l=>{ ads=l||[]; refresh(); });
   api.watchInsts(l=>{ insts=l||[]; refresh(); });
-  api.watchDoctors(list=>{ doctors=list; refresh(); }, err=>{ $("view-inicio").innerHTML=`<div class="empty">No se pudo cargar la lista de doctores (${esc(err.code)}).</div>`; });
+  api.watchBlocks(l=>{ blocks=Object.fromEntries((l||[]).map(b=>[b.id,b.fechas||[]])); refresh(); });
+  api.watchDoctors(list=>{ doctors=list;
+    if(PRE_DOC && !preApplied){ preApplied=true; const pd=list.find(x=>x.id===PRE_DOC && x.activo!==false);
+      if(pd && flow.step===1){ Object.assign(flow,{esp:pd.especialidad,inst:null,docId:pd.id,step:3}); track("llegada_link_doctor",{ especialidad:pd.especialidad||"" }); if(currentTab()==="inicio") renderFlow(); } }
+    refresh(); }, err=>{ $("view-inicio").innerHTML=`<div class="empty">No se pudo cargar la lista de doctores (${esc(err.code)}).</div>`; });
   api.onAuth(u=>{
     user=u; isAdmin=!!(u&&u.verified&&ADMINS.includes(u.email));
     if(isAdmin) stopTrackingHere();
-    if(unMine){unMine();unMine=null;} if(unAll){unAll();unAll=null;} mine=[]; all=[];
+    if(unDoc){unDoc();unDoc=null;} if(unAcc){unAcc();unAcc=null;} isDoctor=false; myDoctorId=null; docReqs=[]; docAccounts=[];
+    if(isAdmin) unAcc=api.watchDocAccounts(l=>{ docAccounts=l||[]; if(currentTab()==="admin"&&adm.tab==="doctores") refresh(); }, ()=>{});
+    if(u && u.verified){
+      api.getDocAccount(u.email).then(acc=>{
+        if(!acc || user!==u) return;
+        isDoctor=true; myDoctorId=acc.doctorId; stopTrackingHere();
+        unDoc=api.watchDoctorReqs(acc.doctorId, l=>{ docReqs=l; refresh(); }, ()=>{});
+        if(!isAdmin && (!location.hash || location.hash==="#inicio")) location.hash="#doctor"; else { route(); refresh(); }
+      }).catch(()=>{});
+    }
+    if(unMine){unMine();unMine=null;} if(unAll){unAll();unAll=null;} if(unCon){unCon();unCon=null;} mine=[]; all=[]; rawAll=[]; contacts={}; contactsLoaded=false;
     if(u) unMine=api.watchMine(u.uid, l=>{ mine=l; trackReserved(l); refresh(); }, ()=>{});
-    if(isAdmin) unAll=api.watchAll(l=>{ all=l; refresh(); }, ()=>{});
+    if(isAdmin){
+      unAll=api.watchAll(l=>{ rawAll=l; mergeAll(); }, ()=>{});
+      unCon=api.watchContacts(l=>{ contacts=Object.fromEntries((l||[]).map(c=>[c.id,c])); contactsLoaded=true; mergeAll(); }, ()=>{});
+    }
     if(flow.step===4){ const f=$("fSend"); if(f&&!f.disabled) f.textContent=u?"Enviar solicitud":"Continuar y enviar"; }
     if(currentTab()!=="inicio") route();
     refresh();
